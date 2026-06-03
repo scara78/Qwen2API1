@@ -18,6 +18,20 @@ const __dirname = dirname(fileURLToPath(import.meta.url));
 
 app.use(express.json({ limit: '50mb' }));
 
+// CORS middleware - allow all origins
+app.use((req, res, next) => {
+  res.header('Access-Control-Allow-Origin', '*');
+  res.header('Access-Control-Allow-Methods', 'GET, POST, PUT, DELETE, OPTIONS');
+  res.header('Access-Control-Allow-Headers', 'Origin, X-Requested-With, Content-Type, Accept, Authorization');
+  res.header('Access-Control-Max-Age', '86400');
+  
+  if (req.method === 'OPTIONS') {
+    return res.sendStatus(204);
+  }
+  
+  next();
+});
+
 // Static frontend — served at root "/" and also kept at "/admin" for backward compat
 app.use(express.static(join(__dirname, '..', 'frontend'), { extensions: ['html'] }));
 app.use('/admin', express.static(join(__dirname, '..', 'frontend'), { extensions: ['html'] }));
