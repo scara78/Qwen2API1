@@ -18,14 +18,12 @@ function decodeJWT(token) {
 
 function isTokenExpired(token) {
   const decoded = decodeJWT(token);
-  if (!decoded?.exp) return false; // Default to not expired if exp is missing to avoid error-locking manual keys
-  return decoded.exp * 1000 < Date.now() + 5 * 60 * 1000; // 5 min buffer
+  if (!decoded?.exp) return false;
+  return decoded.exp * 1000 < Date.now() + 5 * 60 * 1000;
 }
 
-// Account entry: { email, password, token, expiresAt, errorCount, activeRequests }
 const accountPool = [];
 
-// Validate token directly with Qwen official models endpoint
 export async function validateTokenWithQwen(token) {
   try {
     const res = await fetch(`${BASE_URL}/api/models`, {
@@ -46,9 +44,8 @@ export async function validateTokenWithQwen(token) {
 }
 
 export function loadAccounts() {
-  accountPool.length = 0; // Clear pool
+  accountPool.length = 0;
 
-  // 1. First, load from the JSON database
   const dbTokens = readTokens();
   if (dbTokens && dbTokens.length > 0) {
     for (const entry of dbTokens) {
@@ -64,7 +61,6 @@ export function loadAccounts() {
     return accountPool;
   }
 
-  // 2. Fallback: Load from environment variables and import to DB
   const accountsStr = process.env.QWEN_ACCOUNTS?.trim();
   const tokensStr = process.env.QWEN_TOKENS?.trim();
   const tempPool = [];
@@ -97,7 +93,6 @@ export function loadAccounts() {
     for (const entry of tempPool) {
       accountPool.push(entry);
     }
-    // Sync back to database
     saveTokens(accountPool);
   }
 
@@ -129,7 +124,6 @@ async function ensureToken(entry) {
     entry.expiresAt = (decoded?.exp || 0) * 1000;
     entry.errorCount = 0;
     logInfo(`  Autentificat: ${entry.email}, token expiră la ${new Date(entry.expiresAt).toISOString()}`);
-    // Sync to database
     saveTokens(accountPool);
     return entry.token;
   } catch (err) {
@@ -151,7 +145,6 @@ export async function initAccountPool() {
     }
   }
 
-  // Start periodic self-healing health check worker (runs every 5 minutes)
   setInterval(async () => {
     logInfo('[SĂNĂTATE] Pornire worker auto-vindecare conturi...');
     for (const entry of accountPool) {
@@ -230,13 +223,11 @@ export async function refreshToken(entry) {
   return ensureToken(entry);
 }
 
-// Add token to pool with Qwen official verification before adding
 export async function addTokenToPool(tokenStr) {
   const token = tokenStr.trim();
   const decoded = decodeJWT(token);
   const email = decoded?.id || 'token-user';
 
-  // 1. Perform Qwen official API verification
   const isValid = await validateTokenWithQwen(token);
   if (!isValid) {
     throw new Error('Token invalid sau format greșit, nu a trecut validarea prin API oficial!');
@@ -289,7 +280,6 @@ export async function loginAndAddToken(email, password) {
   return entry;
 }
 
-// Physical token deletion from memory and JSON database
 export function deleteTokenFromPool(email) {
   const idx = accountPool.findIndex(t => t.email === email);
   if (idx !== -1) {
@@ -307,7 +297,6 @@ export async function refreshSingleToken(email, manualTokenStr = null) {
   }
 
   if (!entry.password) {
-    // Manual token account
     if (!manualTokenStr) {
       throw new Error('Reîmprospătarea contului manual necesită un token nou');
     }
@@ -323,7 +312,6 @@ export async function refreshSingleToken(email, manualTokenStr = null) {
     saveTokens(accountPool);
     return { success: true, message: `Token-ul pentru contul manual ${email} a fost actualizat și validat cu succes!` };
   } else {
-    // Password login account
     const token = await login(entry.email, entry.password);
     const decoded = decodeJWT(token);
     entry.token = token;

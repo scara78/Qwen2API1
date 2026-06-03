@@ -17,7 +17,7 @@ export async function createChat(token, model, chatMode = 't2t') {
       'user-agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/148.0.0.0 Safari/537.36',
     },
     body: JSON.stringify({
-      title: '新建对话',
+      title: 'Conversație nouă',
       models: [model],
       chat_mode: chatMode,
       chat_type: chatMode,
@@ -27,7 +27,7 @@ export async function createChat(token, model, chatMode = 't2t') {
   });
   const json = await res.json();
   const chatId = json.data?.id;
-  if (!chatId) throw new Error(`Failed to create chat: ${JSON.stringify(json)}`);
+  if (!chatId) throw new Error(`Creare conversație eșuată: ${JSON.stringify(json)}`);
   return chatId;
 }
 
@@ -78,9 +78,6 @@ export async function completion({ token, model, messages, chatMode = 't2t', thi
     ...(size ? { size } : {}),
   };
 
-  // Combine the caller's abort signal with a 120-second hard timeout so that
-  // Qwen's extended thinking phases (common when tool results are in context)
-  // cannot block the response indefinitely.
   const timeoutSignal = AbortSignal.timeout(120_000);
   const combinedSignal = signal
     ? AbortSignal.any([signal, timeoutSignal])
@@ -96,11 +93,9 @@ export async function completion({ token, model, messages, chatMode = 't2t', thi
   if (!res.ok) {
     reportTokenError(token);
     const text = await res.text();
-    throw new Error(`Completion failed: ${res.status} ${text}`);
+    throw new Error(`Completare eșuată: ${res.status} ${text}`);
   }
 
-  // Qwen sometimes returns a JSON error with HTTP 200 (e.g. model not found).
-  // Detect this by checking Content-Type — real SSE is text/event-stream.
   const contentType = res.headers.get('content-type') || '';
   if (!contentType.includes('text/event-stream') && !contentType.includes('application/octet-stream')) {
     reportTokenError(token);
@@ -110,7 +105,7 @@ export async function completion({ token, model, messages, chatMode = 't2t', thi
       const j = JSON.parse(text);
       detail = j.data?.details || j.data?.code || j.message || text;
     } catch {}
-    throw new Error(`Qwen API error (non-SSE 200): ${detail}`);
+    throw new Error(`Eroare API Qwen (non-SSE 200): ${detail}`);
   }
 
   reportTokenSuccess(token);
@@ -143,8 +138,6 @@ export async function* parseSSEStream(body) {
           const parsed = JSON.parse(data);
           if (parsed['response.created'] || parsed['response.info']) continue;
 
-          // Always yield usage if present before processing choices to prevent
-          // usage data from being dropped by a 'continue' statement.
           if (parsed.usage) {
             yield { type: 'usage_update', usage: parsed.usage };
           }
@@ -159,7 +152,6 @@ export async function* parseSSEStream(body) {
               const content = delta.content || '';
               const usage = parsed.usage;
 
-              // Deduplicate: skip same phase+status combo
               const key = `${phase}:${status}`;
               if (key === lastPhaseStatus && status === 'typing' && !content) continue;
               lastPhaseStatus = key;
@@ -169,7 +161,6 @@ export async function* parseSSEStream(body) {
                 return;
               }
 
-              // Image generation: content is the CDN URL
               if (phase === 'image_gen') {
                 if (status === 'finished') continue;
                 if (content) {
@@ -178,7 +169,6 @@ export async function* parseSSEStream(body) {
                 continue;
               }
 
-              // Deep research phases
               const researchPhases = ['ResearchNotice', 'ResearchPlanning', 'ResearchSearching', 'ResearchReading', 'Writing'];
               if (researchPhases.includes(phase)) {
                 if (status === 'finished' && !content) continue;
@@ -191,7 +181,6 @@ export async function* parseSSEStream(body) {
                 continue;
               }
 
-              // Thinking summary
               if (phase === 'thinking_summary') {
                 if (status === 'finished') continue;
                 const extra = delta.extra || {};
@@ -204,26 +193,18 @@ export async function* parseSSEStream(body) {
                 continue;
               }
 
-              // Native function call (used by thinking models).
-              // Qwen streams arguments incrementally in delta.function_call,
-              // then sends a role:"function" event when it tries to execute.
-              // We intercept here and yield before Qwen's fallback kicks in.
               if (delta.function_call) {
                 nativeFnName = delta.function_call.name || nativeFnName;
-                // arguments are the full accumulated string each chunk
                 if (delta.function_call.arguments !== undefined) {
                   nativeFnArgs = delta.function_call.arguments;
                 }
               }
 
-              // role:"function" means Qwen finished streaming the call and
-              // tried to execute it (it will fail for custom tools). Yield now.
               if (delta.role === 'function' && nativeFnName) {
                 yield { type: 'function_call', name: nativeFnName, arguments: nativeFnArgs, usage };
-                return; // stop reading — ignore Qwen's internal fallback
+                return;
               }
 
-              // Regular answer
               if (phase === 'answer' && content) {
                 yield { type: 'content', content, usage };
               }
