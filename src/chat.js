@@ -31,7 +31,29 @@ export async function createChat(token, model, chatMode = 't2t') {
   return chatId;
 }
 
-export async function completion({ token, model, messages, chatMode = 't2t', thinkingEnabled = true, searchEnabled = true, size }, signal) {
+export async function completion({ token, model: rawModel, messages, chatMode: rawChatMode = 't2t', thinkingEnabled = true, searchEnabled = true, size }, signal) {
+  let model = rawModel;
+  let chatMode = rawChatMode;
+
+  // Map suffix-based model IDs to base model IDs and set correct chatMode/thinking flags
+  if (model.endsWith('-thinking')) {
+    model = model.slice(0, -9);
+    thinkingEnabled = true;
+    chatMode = 't2t';
+  } else if (model.endsWith('-deep-research')) {
+    model = model.slice(0, -14);
+    chatMode = 'deep_research';
+  } else if (model.endsWith('-image')) {
+    model = model.slice(0, -6);
+    chatMode = 't2i';
+  } else if (model.endsWith('-webdev')) {
+    model = model.slice(0, -7);
+    chatMode = 'web_dev';
+  } else if (model.endsWith('-slides')) {
+    model = model.slice(0, -7);
+    chatMode = 'slides';
+  }
+
   const chatId = await createChat(token, model, chatMode);
   const timestamp = Math.floor(Date.now() / 1000);
 

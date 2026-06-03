@@ -912,16 +912,7 @@
         <div class="form-group model-selector">
           <label for="playgroundModel">Model / Agent:</label>
           <select id="playgroundModel">
-            <option value="qwen-max">qwen-max (Cel mai inteligent)</option>
-            <option value="qwen-max-thinking">qwen-max-thinking (Cu raționament/gândire)</option>
-            <option value="qwen-max-deep-research">qwen-max-deep-research (Cercetare profundă)</option>
-            <option value="qwen-plus">qwen-plus (Echilibrat)</option>
-            <option value="qwen-plus-thinking">qwen-plus-thinking (Echilibrat cu gândire)</option>
-            <option value="qwen-turbo">qwen-turbo (Rapid)</option>
-            <option value="qwen-vl-max">qwen-vl-max (Vision/Multimodal)</option>
-            <option value="qwen-max-image">qwen-max-image (Generare imagini)</option>
-            <option value="qwen-max-webdev">qwen-max-webdev (Dezvoltare web)</option>
-            <option value="qwen-max-slides">qwen-max-slides (Prezentări)</option>
+            <option value="">Se încarcă modelele...</option>
           </select>
         </div>
 
@@ -1010,6 +1001,9 @@
         document.getElementById(tab.dataset.tab).classList.add('active');
         if (tab.dataset.tab === 'logs') {
           loadSystemLogs(1);
+        }
+        if (tab.dataset.tab === 'playground') {
+          fetchDynamicModels();
         }
       });
     });
@@ -1187,19 +1181,26 @@
       .then(data => {
         if (data && Array.isArray(data.data)) {
           const select = document.getElementById('playgroundModel');
-          // Keep existing options but update or append new ones dynamically
-          const existingValues = Array.from(select.options).map(opt => opt.value);
+          select.innerHTML = '';
           data.data.forEach(model => {
-            if (!existingValues.includes(model.id)) {
-              const opt = document.createElement('option');
-              opt.value = model.id;
-              opt.innerText = model.id;
-              select.appendChild(opt);
-            }
+            const opt = document.createElement('option');
+            opt.value = model.id;
+            let label = model.id;
+            if (model.id.includes('-thinking')) label += ' (Gândire)';
+            else if (model.id.includes('-deep-research')) label += ' (Cercetare Profundă)';
+            else if (model.id.includes('-image')) label += ' (Imagine)';
+            else if (model.id.includes('-webdev')) label += ' (Web Dev)';
+            else if (model.id.includes('-slides')) label += ' (Prezentări)';
+            opt.innerText = label;
+            select.appendChild(opt);
           });
         }
       })
-      .catch(err => console.warn('Nu s-au putut prelua modelele dinamice:', err));
+      .catch(err => {
+        console.warn('Nu s-au putut prelua modelele dinamice:', err);
+        const select = document.getElementById('playgroundModel');
+        select.innerHTML = '<option value="qwen-max">qwen-max (Eroare încărcare, fallback)</option>';
+      });
     }
 
     // File Upload Handlers
@@ -1405,6 +1406,7 @@
       });
     }
 
+    // Refresh Logs
     function refreshLogs() {
       loadSystemLogs(currentPage);
     }
@@ -1462,7 +1464,6 @@
       assistantMessageContent.appendChild(typingIndicator);
 
       let thinkingBlock = null;
-      let researchBlock = null;
 
       fetch('/v1/chat/completions', {
         method: 'POST',
