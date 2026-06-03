@@ -111,7 +111,7 @@ async function login(email, password) {
     body: JSON.stringify({ email, password: sha256(password) }),
   });
   const json = await res.json();
-  if (!json.token) throw new Error(`Login failed for ${email}: ${JSON.stringify(json)}`);
+  if (!json.token) throw new Error(`Autentificare eșuată pentru ${email}: ${JSON.stringify(json)}`);
   return json.token;
 }
 
@@ -120,7 +120,7 @@ async function ensureToken(entry) {
 
   if (!entry.password) {
     entry.errorCount++;
-    throw new Error(`Token expired for ${entry.email}, no password to refresh`);
+    throw new Error(`Token expirat pentru ${entry.email}, lipsește parola pentru reîmprospătare`);
   }
 
   try {
@@ -128,7 +128,7 @@ async function ensureToken(entry) {
     const decoded = decodeJWT(entry.token);
     entry.expiresAt = (decoded?.exp || 0) * 1000;
     entry.errorCount = 0;
-    logInfo(`  Logged in: ${entry.email}, token expires ${new Date(entry.expiresAt).toISOString()}`);
+    logInfo(`  Autentificat: ${entry.email}, token expiră la ${new Date(entry.expiresAt).toISOString()}`);
     // Sync to database
     saveTokens(accountPool);
     return entry.token;
@@ -141,43 +141,43 @@ async function ensureToken(entry) {
 export async function initAccountPool() {
   const config = readConfig();
   const maxConcurrent = config.maxConcurrentPerToken || 10;
-  logInfo(`Account pool: ${accountPool.length} account(s), max ${maxConcurrent} concurrent each`);
+  logInfo(`Pool conturi: ${accountPool.length} cont(uri), max ${maxConcurrent} concurente pe cont`);
 
   for (const entry of accountPool) {
     try {
       await ensureToken(entry);
     } catch (err) {
-      logWarn(`  Failed to init ${entry.email}: ${err.message}`);
+      logWarn(`  Eșec inițializare ${entry.email}: ${err.message}`);
     }
   }
 
   // Start periodic self-healing health check worker (runs every 5 minutes)
   setInterval(async () => {
-    logInfo('[HEALTH] Starting self-healing account recovery worker...');
+    logInfo('[SĂNĂTATE] Pornire worker auto-vindecare conturi...');
     for (const entry of accountPool) {
       if (entry.errorCount >= 3 || !entry.token || isTokenExpired(entry.token)) {
         if (!entry.password) {
           if (isTokenExpired(entry.token)) {
-            logWarn(`[HEALTH] Token expired for manual account ${entry.email}, but cannot self-heal without password.`);
+            logWarn(`[SĂNĂTATE] Token expirat pentru cont manual ${entry.email}, nu se poate auto-vindeca fără parolă.`);
           } else if (entry.errorCount >= 3) {
-            logInfo(`[HEALTH] Manual account ${entry.email} reached error limit under unexpired token. Running dynamic validation check...`);
+            logInfo(`[SĂNĂTATE] Cont manual ${entry.email} a atins limita de erori sub token neexpirat. Verificare dinamică...`);
             const isValid = await validateTokenWithQwen(entry.token);
             if (isValid) {
               entry.errorCount = 0;
-              logInfo(`[HEALTH] Successfully restored manual account: ${entry.email}!`);
+              logInfo(`[SĂNĂTATE] Cont manual ${entry.email} restaurat cu succes!`);
               saveTokens(accountPool);
             } else {
-              logWarn(`[HEALTH] Dynamic validation failed for manual account: ${entry.email}. Token is invalid.`);
+              logWarn(`[SĂNĂTATE] Validare dinamică eșuată pentru cont manual: ${entry.email}. Token invalid.`);
             }
           }
           continue;
         }
-        logInfo(`[HEALTH] Attempting self-healing recovery for account: ${entry.email}...`);
+        logInfo(`[SĂNĂTATE] Încercare auto-vindecare pentru cont: ${entry.email}...`);
         try {
           await ensureToken(entry);
-          logInfo(`[HEALTH] Successfully recovered account: ${entry.email}!`);
+          logInfo(`[SĂNĂTATE] Cont ${entry.email} recuperat cu succes!`);
         } catch (err) {
-          logWarn(`[HEALTH] Failed to recover account ${entry.email}: ${err.message}`);
+          logWarn(`[SĂNĂTATE] Eșec recuperare cont ${entry.email}: ${err.message}`);
         }
       }
     }
@@ -239,7 +239,7 @@ export async function addTokenToPool(tokenStr) {
   // 1. Perform Qwen official API verification
   const isValid = await validateTokenWithQwen(token);
   if (!isValid) {
-    throw new Error('令牌失效或格式错误，无法通过官方接口校验！');
+    throw new Error('Token invalid sau format greșit, nu a trecut validarea prin API oficial!');
   }
 
   const existing = accountPool.find(t => t.token === token || t.email === email);
@@ -303,25 +303,25 @@ export function deleteTokenFromPool(email) {
 export async function refreshSingleToken(email, manualTokenStr = null) {
   const entry = accountPool.find(t => t.email === email);
   if (!entry) {
-    throw new Error(`未找到账户为 ${email} 的记录`);
+    throw new Error(`Nu s-a găsit cont pentru ${email}`);
   }
 
   if (!entry.password) {
     // Manual token account
     if (!manualTokenStr) {
-      throw new Error('手动录入账户刷新需要提供新的 token');
+      throw new Error('Reîmprospătarea contului manual necesită un token nou');
     }
     const token = manualTokenStr.trim();
     const isValid = await validateTokenWithQwen(token);
     if (!isValid) {
-      throw new Error('新令牌失效或格式错误，无法通过官方接口校验！');
+      throw new Error('Token nou invalid sau format greșit, nu a trecut validarea prin API oficial!');
     }
     const decoded = decodeJWT(token);
     entry.token = token;
     entry.expiresAt = (decoded?.exp || 0) * 1000;
     entry.errorCount = 0;
     saveTokens(accountPool);
-    return { success: true, message: `手动账户 ${email} 的令牌已成功更新并校验通过！` };
+    return { success: true, message: `Token-ul pentru contul manual ${email} a fost actualizat și validat cu succes!` };
   } else {
     // Password login account
     const token = await login(entry.email, entry.password);
@@ -330,7 +330,7 @@ export async function refreshSingleToken(email, manualTokenStr = null) {
     entry.expiresAt = (decoded?.exp || 0) * 1000;
     entry.errorCount = 0;
     saveTokens(accountPool);
-    return { success: true, message: `账户 ${email} 已通过官方密码重新登录，令牌已刷新！` };
+    return { success: true, message: `Contul ${email} a fost reautentificat cu parolă, token reîmprospătat!` };
   }
 }
 

@@ -6,20 +6,20 @@ const queue = [];
 export function enqueueRequest(timeoutMs = 30000, excludeEmails = [], signal = null) {
   return new Promise((resolve, reject) => {
     if (signal?.aborted) {
-      return reject(new Error('Request aborted by client prior to slot allocation'));
+      return reject(new Error('Cerere anulată de client înainte de alocare slot'));
     }
 
     const timer = setTimeout(() => {
       const idx = queue.findIndex(e => e.resolve === resolve);
       if (idx !== -1) queue.splice(idx, 1);
-      reject(new Error('Request timed out waiting for available token'));
+      reject(new Error('Timeout așteptare token disponibil'));
     }, timeoutMs);
 
     const abortHandler = () => {
       clearTimeout(timer);
       const idx = queue.findIndex(e => e.resolve === resolve);
       if (idx !== -1) queue.splice(idx, 1);
-      reject(new Error('Request aborted by client'));
+      reject(new Error('Cerere anulată de client'));
     };
 
     if (signal) {
@@ -37,7 +37,7 @@ export function enqueueRequest(timeoutMs = 30000, excludeEmails = [], signal = n
     if (queue.length >= MAX_QUEUE_SIZE) {
       clearTimeout(timer);
       if (signal) signal.removeEventListener('abort', abortHandler);
-      reject(new Error('Too many queued requests'));
+      reject(new Error('Prea multe cereri în coadă'));
       return;
     }
 

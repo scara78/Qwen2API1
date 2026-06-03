@@ -52,7 +52,7 @@ app.use((req, res, next) => {
     const auth = req.headers['authorization'];
     if (auth === `Bearer ${adminPass}`) return next();
 
-    return res.status(401).json({ error: { message: 'Unauthorized Admin Access' } });
+    return res.status(401).json({ error: { message: 'Acces admin neautorizat' } });
   }
 
   // 2. OpenAI proxies /v1/* (require apiKey if set)
@@ -62,7 +62,7 @@ app.use((req, res, next) => {
   const auth = req.headers['authorization'];
   if (auth === `Bearer ${apiKey}`) return next();
 
-  res.status(401).json({ error: { message: 'Invalid API key' } });
+  res.status(401).json({ error: { message: 'Cheie API invalidă' } });
 });
 
 // OpenAI compatible Chat Completion proxy endpoint
@@ -74,7 +74,7 @@ app.post('/v1/images/generations', handleOpenAIImageGenerations);
 // Model list proxy endpoint
 app.get('/v1/models', async (req, res) => {
   const slot = acquireToken();
-  if (!slot) return res.status(503).json({ error: { message: 'No available token' } });
+  if (!slot) return res.status(503).json({ error: { message: 'Niciun token disponibil' } });
 
   try {
     const modelList = await getModels(slot.token);
@@ -158,7 +158,7 @@ app.post('/admin/api/config/update', (req, res) => {
     if (queueTimeoutMs !== undefined) sysConfig.queueTimeoutMs = Number(queueTimeoutMs);
 
     saveConfig(sysConfig);
-    res.json({ success: true, message: '系统参数已保存且热加载生效！' });
+    res.json({ success: true, message: 'Parametrii sistem salvați și aplicați!' });
   } catch (err) {
     res.status(500).json({ error: { message: err.message } });
   }
@@ -168,7 +168,7 @@ app.post('/admin/api/config/update', (req, res) => {
 app.post('/admin/api/token/add', async (req, res) => {
   const { token } = req.body;
   if (!token || typeof token !== 'string') {
-    return res.status(400).json({ error: { message: 'token required' } });
+    return res.status(400).json({ error: { message: 'Token necesar' } });
   }
   try {
     const added = await addTokenToPool(token);
@@ -182,7 +182,7 @@ app.post('/admin/api/token/add', async (req, res) => {
 app.post('/admin/api/token/login', async (req, res) => {
   const { email, password } = req.body;
   if (!email || !password) {
-    return res.status(400).json({ error: { message: 'email and password required' } });
+    return res.status(400).json({ error: { message: 'Email și parolă necesare' } });
   }
   try {
     const entry = await loginAndAddToken(email, password);
@@ -196,14 +196,14 @@ app.post('/admin/api/token/login', async (req, res) => {
 app.delete('/admin/api/token/delete', (req, res) => {
   const { email } = req.body;
   if (!email) {
-    return res.status(400).json({ error: { message: 'email required' } });
+    return res.status(400).json({ error: { message: 'Email necesar' } });
   }
   try {
     const deleted = deleteTokenFromPool(email);
     if (deleted) {
-      res.json({ success: true, message: `账户 ${email} 已成功物理下线删除` });
+      res.json({ success: true, message: `Contul ${email} a fost șters` });
     } else {
-      res.status(404).json({ error: { message: `未找到账户为 ${email} 的令牌` } });
+      res.status(404).json({ error: { message: `Nu s-a găsit token pentru ${email}` } });
     }
   } catch (err) {
     res.status(500).json({ error: { message: err.message } });
@@ -214,7 +214,7 @@ app.delete('/admin/api/token/delete', (req, res) => {
 app.post('/admin/api/token/refresh', async (req, res) => {
   const { email, token } = req.body;
   if (!email) {
-    return res.status(400).json({ error: { message: 'email required' } });
+    return res.status(400).json({ error: { message: 'Email necesar' } });
   }
   try {
     const result = await refreshSingleToken(email, token);
@@ -228,18 +228,18 @@ app.post('/admin/api/token/refresh', async (req, res) => {
 
 app.listen(PORT, async () => {
   logInfo(`=========================================`);
-  logInfo(` Qwen 2API Gateway Running`);
-  logInfo(`   Local URL:    http://localhost:${PORT}`);
-  logInfo(`   Admin SPA:    http://localhost:${PORT}/admin`);
-  logInfo(`   API Endpoint: POST /v1/chat/completions`);
+  logInfo(` Qwen 2API Gateway Activ`);
+  logInfo(`   URL Local:     http://localhost:${PORT}`);
+  logInfo(`   Panel Admin:   http://localhost:${PORT}/admin`);
+  logInfo(`   Endpoint API:  POST /v1/chat/completions`);
   logInfo(`=========================================`);
 
   const sysConfig = readConfig();
   if (sysConfig.adminPassword === 'admin123') {
-    logWarn(`[SECURITY] Admin console is running with the DEFAULT password: 'admin123'. Please set ADMIN_PASSWORD in environment or change it in Settings panel immediately!`);
+    logWarn(`[SECURITATE] Consola admin rulează cu parola IMPLICITĂ: 'admin123'. Setează ADMIN_PASSWORD în variabile de mediu sau schimb-o imediat în panoul Setări!`);
   }
   if (!sysConfig.apiKey) {
-    logWarn(`[SECURITY] API key is empty. Proxy endpoints are publicly accessible.`);
+    logWarn(`[SECURITATE] Cheia API este goală. Endpoint-urile proxy sunt accesibile public.`);
   }
 
   loadAccounts();
