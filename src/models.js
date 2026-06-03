@@ -43,7 +43,7 @@ export function handleOpenAIModels(modelList) {
     const chatTypes = meta.chat_type || [];
 
     const has = {
-      vision: !!caps.vision,
+      vision: !!caps.vision || id.includes('-vl-') || id.includes('vl-max') || id.includes('vl-plus'),
       thinking: !!caps.thinking,
       search: !!caps.search,
       deep_research: chatTypes.includes('deep_research'),
@@ -60,9 +60,6 @@ export function handleOpenAIModels(modelList) {
     if (has.thinking)       data.push({ id: m.id + '-thinking',      ...base });
     if (has.deep_research)  data.push({ id: m.id + '-deep-research', ...base });
     if (has.image_gen)      data.push({ id: m.id + '-image',         ...base });
-    // t2v (video generation) is intentionally excluded: Qwen delivers video results
-    // only through its proprietary web-UI push mechanism; no REST polling endpoint exists.
-    // if (has.video_gen) data.push({ id: m.id + '-video', ...base });
     if (has.web_dev)        data.push({ id: m.id + '-webdev',        ...base });
     if (has.slides)         data.push({ id: m.id + '-slides',        ...base });
   }

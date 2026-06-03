@@ -1191,6 +1191,12 @@
             else if (model.id.includes('-image')) label += ' (Imagine)';
             else if (model.id.includes('-webdev')) label += ' (Web Dev)';
             else if (model.id.includes('-slides')) label += ' (Prezentări)';
+            
+            if (model.capabilities && model.capabilities.vision) {
+              label += ' 👁️ (Vision)';
+              opt.dataset.vision = 'true';
+            }
+            
             opt.innerText = label;
             select.appendChild(opt);
           });
@@ -1425,6 +1431,24 @@
       const text = input.value.trim();
       if (!text && !uploadedFile) return;
 
+      const select = document.getElementById('playgroundModel');
+      let model = select.value;
+
+      // Auto-switch to vision model if image is uploaded and current model doesn't support vision
+      if (uploadedFile && uploadedFile.type.startsWith('image/')) {
+        const selectedOpt = select.options[select.selectedIndex];
+        if (selectedOpt && selectedOpt.dataset.vision !== 'true') {
+          for (let i = 0; i < select.options.length; i++) {
+            if (select.options[i].dataset.vision === 'true') {
+              select.selectedIndex = i;
+              model = select.options[i].value;
+              appendMessage('assistant', `[Sistem] Model schimbat automat la ${model} pentru a putea procesa imaginea.`);
+              break;
+            }
+          }
+        }
+      }
+
       // Append user message to UI
       appendMessage('user', text, uploadedFile);
       input.value = '';
@@ -1453,7 +1477,6 @@
       // Clear uploaded file preview
       removeUploadedFile();
 
-      const model = document.getElementById('playgroundModel').value;
       const assistantMessageId = appendMessage('assistant', '');
       const assistantMessageContent = document.getElementById(assistantMessageId).querySelector('.message-text');
       
