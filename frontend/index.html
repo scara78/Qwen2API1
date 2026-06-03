@@ -1,1270 +1,1602 @@
 <!DOCTYPE html>
-<html lang="ro" class="dark">
+<html lang="ro">
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Qwen-2API Gateway | Panou Control Admin</title>
-  <script src="https://cdn.tailwindcss.com"></script>
-  <script src="https://unpkg.com/lucide@latest"></script>
   <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
-  <script>
-    tailwind.config = {
-      darkMode: 'class',
-      theme: {
-        extend: {
-          colors: {
-            border: '#30363d',
-            bgPrimary: '#0d1117',
-            bgSecondary: '#161b22',
-            bgTertiary: '#21262d',
-            textPrimary: '#c9d1d9',
-            textSecondary: '#8b949e',
-            accentBlue: '#58a6ff',
-            accentGreen: '#3fb950',
-            accentRed: '#f85149',
-            accentYellow: '#d29922',
-          }
-        }
-      }
-    }
-  </script>
   <style>
+    :root {
+      --bg-primary: #0d1117;
+      --bg-secondary: #161b22;
+      --bg-tertiary: #21262d;
+      --border-color: #30363d;
+      --text-primary: #c9d1d9;
+      --text-secondary: #8b949e;
+      --accent-blue: #58a6ff;
+      --accent-green: #3fb950;
+      --accent-red: #f85149;
+      --accent-yellow: #d29922;
+      --shadow: rgba(0, 0, 0, 0.3);
+    }
+
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+    }
+
     body {
-      background-color: #0d1117;
-      color: #c9d1d9;
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Noto Sans', Helvetica, Arial, sans-serif;
+      background: var(--bg-primary);
+      color: var(--text-primary);
+      line-height: 1.6;
+      overflow-x: hidden;
     }
-    ::-webkit-scrollbar {
-      width: 8px;
-      height: 8px;
+
+    .container {
+      max-width: 1400px;
+      margin: 0 auto;
+      padding: 2rem;
     }
-    ::-webkit-scrollbar-track {
-      background: #161b22;
+
+    header {
+      text-align: center;
+      padding: 3rem 0;
+      border-bottom: 1px solid var(--border-color);
     }
-    ::-webkit-scrollbar-thumb {
-      background: #30363d;
+
+    h1 {
+      font-size: 2.5rem;
+      font-weight: 600;
+      margin-bottom: 0.5rem;
+      background: linear-gradient(135deg, var(--accent-blue), var(--accent-green));
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      background-clip: text;
+    }
+
+    .subtitle {
+      color: var(--text-secondary);
+      font-size: 1rem;
+    }
+
+    .tabs {
+      display: flex;
+      gap: 0.5rem;
+      margin: 2rem 0 1.5rem;
+      border-bottom: 1px solid var(--border-color);
+      overflow-x: auto;
+      padding-bottom: 0;
+    }
+
+    .tab {
+      background: transparent;
+      border: none;
+      color: var(--text-secondary);
+      padding: 0.75rem 1.5rem;
+      cursor: pointer;
+      font-size: 0.95rem;
+      font-weight: 500;
+      transition: all 0.2s ease;
+      border-bottom: 2px solid transparent;
+      white-space: nowrap;
+    }
+
+    .tab:hover {
+      color: var(--text-primary);
+      background: var(--bg-secondary);
+    }
+
+    .tab.active {
+      color: var(--accent-blue);
+      border-bottom-color: var(--accent-blue);
+    }
+
+    .tab-content {
+      display: none;
+      animation: fadeIn 0.3s ease;
+    }
+
+    .tab-content.active {
+      display: block;
+    }
+
+    @keyframes fadeIn {
+      from { opacity: 0; transform: translateY(10px); }
+      to { opacity: 1; transform: translateY(0); }
+    }
+
+    .card {
+      background: var(--bg-secondary);
+      border: 1px solid var(--border-color);
+      border-radius: 8px;
+      padding: 1.5rem;
+      margin-bottom: 1.5rem;
+      box-shadow: 0 2px 8px var(--shadow);
+    }
+
+    .card h2 {
+      font-size: 1.25rem;
+      font-weight: 600;
+      margin-bottom: 1rem;
+      color: var(--text-primary);
+    }
+
+    .stats-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+      gap: 1rem;
+      margin-bottom: 2rem;
+    }
+
+    .stat-card {
+      background: var(--bg-tertiary);
+      border: 1px solid var(--border-color);
+      border-radius: 6px;
+      padding: 1.25rem;
+      text-align: center;
+    }
+
+    .stat-value {
+      font-size: 2rem;
+      font-weight: 700;
+      color: var(--accent-blue);
+      margin-bottom: 0.25rem;
+    }
+
+    .stat-label {
+      font-size: 0.875rem;
+      color: var(--text-secondary);
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+    }
+
+    .form-group {
+      margin-bottom: 1rem;
+    }
+
+    label {
+      display: block;
+      margin-bottom: 0.5rem;
+      font-size: 0.9rem;
+      font-weight: 500;
+      color: var(--text-primary);
+    }
+
+    input[type="text"],
+    input[type="password"],
+    input[type="number"],
+    textarea,
+    select {
+      width: 100%;
+      padding: 0.75rem;
+      background: var(--bg-tertiary);
+      border: 1px solid var(--border-color);
+      border-radius: 6px;
+      color: var(--text-primary);
+      font-size: 0.95rem;
+      transition: all 0.2s ease;
+    }
+
+    input:focus,
+    textarea:focus,
+    select:focus {
+      outline: none;
+      border-color: var(--accent-blue);
+      box-shadow: 0 0 0 3px rgba(88, 166, 255, 0.1);
+    }
+
+    textarea {
+      resize: vertical;
+      min-height: 100px;
+      font-family: 'Monaco', 'Menlo', monospace;
+    }
+
+    button {
+      background: var(--accent-blue);
+      color: white;
+      border: none;
+      padding: 0.75rem 1.5rem;
+      border-radius: 6px;
+      font-size: 0.95rem;
+      font-weight: 500;
+      cursor: pointer;
+      transition: all 0.2s ease;
+    }
+
+    button:hover {
+      background: #4a95e8;
+      transform: translateY(-1px);
+      box-shadow: 0 4px 12px rgba(88, 166, 255, 0.3);
+    }
+
+    button:active {
+      transform: translateY(0);
+    }
+
+    button.secondary {
+      background: var(--bg-tertiary);
+      color: var(--text-primary);
+    }
+
+    button.secondary:hover {
+      background: var(--border-color);
+    }
+
+    button.danger {
+      background: var(--accent-red);
+    }
+
+    button.danger:hover {
+      background: #e04640;
+    }
+
+    button.success {
+      background: var(--accent-green);
+    }
+
+    button.success:hover {
+      background: #36a347;
+    }
+
+    .button-group {
+      display: flex;
+      gap: 0.75rem;
+      flex-wrap: wrap;
+    }
+
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      margin-top: 1rem;
+    }
+
+    th, td {
+      text-align: left;
+      padding: 0.75rem;
+      border-bottom: 1px solid var(--border-color);
+    }
+
+    th {
+      background: var(--bg-tertiary);
+      font-weight: 600;
+      font-size: 0.875rem;
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+      color: var(--text-secondary);
+    }
+
+    tr:hover {
+      background: var(--bg-tertiary);
+    }
+
+    .status-badge {
+      display: inline-block;
+      padding: 0.25rem 0.75rem;
+      border-radius: 12px;
+      font-size: 0.75rem;
+      font-weight: 600;
+      text-transform: uppercase;
+    }
+
+    .status-online {
+      background: rgba(63, 185, 80, 0.2);
+      color: var(--accent-green);
+    }
+
+    .status-offline {
+      background: rgba(248, 81, 73, 0.2);
+      color: var(--accent-red);
+    }
+
+    .status-warning {
+      background: rgba(210, 153, 34, 0.2);
+      color: var(--accent-yellow);
+    }
+
+    .chart-container {
+      position: relative;
+      height: 200px;
+      margin: 1.5rem 0;
+    }
+
+    .log-viewer {
+      background: var(--bg-tertiary);
+      border: 1px solid var(--border-color);
+      border-radius: 6px;
+      padding: 1rem;
+      max-height: 400px;
+      overflow-y: auto;
+      font-family: 'Monaco', 'Menlo', monospace;
+      font-size: 0.85rem;
+      line-height: 1.5;
+    }
+
+    .log-line {
+      margin-bottom: 0.25rem;
+      word-break: break-all;
+    }
+
+    .log-line.info { color: var(--accent-blue); }
+    .log-line.warn { color: var(--accent-yellow); }
+    .log-line.error { color: var(--accent-red); }
+
+    .alert {
+      padding: 1rem;
+      border-radius: 6px;
+      margin-bottom: 1rem;
+      border-left: 4px solid;
+    }
+
+    .alert-success {
+      background: rgba(63, 185, 80, 0.1);
+      border-left-color: var(--accent-green);
+      color: var(--accent-green);
+    }
+
+    .alert-error {
+      background: rgba(248, 81, 73, 0.1);
+      border-left-color: var(--accent-red);
+      color: var(--accent-red);
+    }
+
+    .alert-info {
+      background: rgba(88, 166, 255, 0.1);
+      border-left-color: var(--accent-blue);
+      color: var(--accent-blue);
+    }
+
+    .loading {
+      display: inline-block;
+      width: 20px;
+      height: 20px;
+      border: 3px solid var(--border-color);
+      border-top-color: var(--accent-blue);
+      border-radius: 50%;
+      animation: spin 0.8s linear infinite;
+    }
+
+    @keyframes spin {
+      to { transform: rotate(360deg); }
+    }
+
+    .modal {
+      display: none;
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      background: rgba(0, 0, 0, 0.7);
+      z-index: 1000;
+      align-items: center;
+      justify-content: center;
+    }
+
+    .modal.active {
+      display: flex;
+    }
+
+    .modal-content {
+      background: var(--bg-secondary);
+      border: 1px solid var(--border-color);
+      border-radius: 8px;
+      padding: 2rem;
+      max-width: 600px;
+      width: 90%;
+      max-height: 90vh;
+      overflow-y: auto;
+      box-shadow: 0 8px 32px var(--shadow);
+    }
+
+    .modal-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 1.5rem;
+    }
+
+    .modal-title {
+      font-size: 1.5rem;
+      font-weight: 600;
+    }
+
+    .close-modal {
+      background: transparent;
+      color: var(--text-secondary);
+      border: none;
+      font-size: 1.5rem;
+      cursor: pointer;
+      padding: 0;
+      width: 32px;
+      height: 32px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
       border-radius: 4px;
     }
-    ::-webkit-scrollbar-thumb:hover {
-      background: #8b949e;
+
+    .close-modal:hover {
+      background: var(--bg-tertiary);
+      color: var(--text-primary);
+    }
+
+    .chat-container {
+      display: flex;
+      flex-direction: column;
+      height: 600px;
+      background: var(--bg-tertiary);
+      border: 1px solid var(--border-color);
+      border-radius: 8px;
+      overflow: hidden;
+    }
+
+    .chat-messages {
+      flex: 1;
+      overflow-y: auto;
+      padding: 1.5rem;
+      display: flex;
+      flex-direction: column;
+      gap: 1rem;
+    }
+
+    .message {
+      display: flex;
+      gap: 1rem;
+      max-width: 85%;
+      animation: slideIn 0.3s ease;
+    }
+
+    @keyframes slideIn {
+      from { opacity: 0; transform: translateY(10px); }
+      to { opacity: 1; transform: translateY(0); }
+    }
+
+    .message.user {
+      align-self: flex-end;
+      flex-direction: row-reverse;
+    }
+
+    .message-avatar {
+      width: 36px;
+      height: 36px;
+      border-radius: 50%;
+      background: var(--accent-blue);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-weight: 600;
+      flex-shrink: 0;
+    }
+
+    .message.user .message-avatar {
+      background: var(--accent-green);
+    }
+
+    .message-content {
+      background: var(--bg-secondary);
+      border: 1px solid var(--border-color);
+      border-radius: 8px;
+      padding: 1rem;
+      flex: 1;
+    }
+
+    .message.user .message-content {
+      background: rgba(88, 166, 255, 0.1);
+      border-color: var(--accent-blue);
+    }
+
+    .message-text {
+      line-height: 1.6;
+      white-space: pre-wrap;
+      word-wrap: break-word;
+    }
+
+    .thinking-block {
+      background: rgba(210, 153, 34, 0.1);
+      border-left: 3px solid var(--accent-yellow);
+      padding: 0.75rem;
+      margin-top: 0.5rem;
+      border-radius: 4px;
+      font-size: 0.9rem;
+    }
+
+    .thinking-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      cursor: pointer;
+      user-select: none;
+      margin-bottom: 0.5rem;
+    }
+
+    .thinking-title {
+      font-weight: 600;
+      color: var(--accent-yellow);
+    }
+
+    .thinking-content {
+      color: var(--text-secondary);
+      padding-left: 0.5rem;
+      border-left: 2px solid var(--border-color);
+    }
+
+    .thinking-content.collapsed {
+      display: none;
+    }
+
+    .research-block {
+      background: rgba(88, 166, 255, 0.1);
+      border-left: 3px solid var(--accent-blue);
+      padding: 0.75rem;
+      margin-top: 0.5rem;
+      border-radius: 4px;
+      font-size: 0.9rem;
+    }
+
+    .research-stage {
+      font-weight: 600;
+      color: var(--accent-blue);
+      margin-bottom: 0.5rem;
+    }
+
+    .image-result {
+      margin-top: 1rem;
+      border-radius: 8px;
+      overflow: hidden;
+      border: 1px solid var(--border-color);
+    }
+
+    .image-result img {
+      width: 100%;
+      display: block;
+    }
+
+    .chat-input-container {
+      border-top: 1px solid var(--border-color);
+      padding: 1rem;
+      background: var(--bg-secondary);
+    }
+
+    .chat-input-wrapper {
+      display: flex;
+      gap: 0.75rem;
+      align-items: flex-end;
+    }
+
+    .chat-input {
+      flex: 1;
+      min-height: 60px;
+      max-height: 200px;
+      resize: none;
+      font-family: inherit;
+    }
+
+    .send-button {
+      padding: 0.75rem 1.5rem;
+      height: 44px;
+    }
+
+    .model-selector {
+      margin-bottom: 0.75rem;
+    }
+
+    .typing-indicator {
+      display: flex;
+      gap: 0.25rem;
+      padding: 0.5rem 0;
+    }
+
+    .typing-dot {
+      width: 8px;
+      height: 8px;
+      border-radius: 50%;
+      background: var(--text-secondary);
+      animation: typing 1.4s infinite;
+    }
+
+    .typing-dot:nth-child(2) { animation-delay: 0.2s; }
+    .typing-dot:nth-child(3) { animation-delay: 0.4s; }
+
+    @keyframes typing {
+      0%, 60%, 100% { opacity: 0.3; }
+      30% { opacity: 1; }
+    }
+
+    .password-modal {
+      display: flex;
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      background: rgba(0, 0, 0, 0.9);
+      z-index: 2000;
+      align-items: center;
+      justify-content: center;
+    }
+
+    .password-modal-content {
+      background: var(--bg-secondary);
+      border: 1px solid var(--border-color);
+      border-radius: 8px;
+      padding: 2rem;
+      max-width: 400px;
+      width: 90%;
+      box-shadow: 0 8px 32px var(--shadow);
+    }
+
+    .password-modal h2 {
+      margin-bottom: 1rem;
+      text-align: center;
+    }
+
+    .pagination-controls {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-top: 1rem;
+      padding: 1rem;
+      background: var(--bg-tertiary);
+      border-radius: 6px;
+    }
+
+    .pagination-info {
+      color: var(--text-secondary);
+      font-size: 0.9rem;
+    }
+
+    .pagination-buttons {
+      display: flex;
+      gap: 0.5rem;
+    }
+
+    /* File Upload Styles */
+    .upload-btn {
+      background: var(--bg-tertiary);
+      border: 1px solid var(--border-color);
+      color: var(--text-primary);
+      padding: 0.75rem;
+      border-radius: 6px;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      height: 44px;
+      width: 44px;
+      transition: all 0.2s ease;
+    }
+
+    .upload-btn:hover {
+      background: var(--border-color);
+      color: var(--accent-blue);
+    }
+
+    .file-preview-container {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 0.5rem;
+      margin-bottom: 0.5rem;
+      padding: 0.5rem;
+      background: var(--bg-tertiary);
+      border-radius: 6px;
+      border: 1px dashed var(--border-color);
+    }
+
+    .file-preview-item {
+      position: relative;
+      display: flex;
+      align-items: center;
+      gap: 0.5rem;
+      background: var(--bg-secondary);
+      border: 1px solid var(--border-color);
+      padding: 0.25rem 0.5rem;
+      border-radius: 4px;
+      font-size: 0.8rem;
+      max-width: 200px;
+    }
+
+    .file-preview-item img {
+      width: 24px;
+      height: 24px;
+      object-fit: cover;
+      border-radius: 2px;
+    }
+
+    .file-preview-item .remove-file {
+      background: transparent;
+      border: none;
+      color: var(--accent-red);
+      cursor: pointer;
+      font-weight: bold;
+      font-size: 1rem;
+      padding: 0 0.25rem;
+    }
+
+    .file-preview-item .file-name {
+      overflow: hidden;
+      text-overflow: ellipsis;
+      white-space: nowrap;
+    }
+
+    @media (max-width: 768px) {
+      .container { padding: 1rem; }
+      h1 { font-size: 1.75rem; }
+      .stats-grid { grid-template-columns: 1fr; }
+      .tab { padding: 0.5rem 1rem; font-size: 0.875rem; }
+      .modal-content { padding: 1.5rem; }
+      .chat-container { height: 500px; }
+      .message { max-width: 95%; }
     }
   </style>
 </head>
-<body class="min-h-screen font-sans antialiased">
-
-  <!-- Modal Autentificare Admin -->
-  <div id="passwordModal" class="fixed inset-0 z-50 flex items-center justify-center bg-black/90 backdrop-blur-sm">
-    <div class="w-full max-w-md p-8 rounded-lg border border-border bg-bgSecondary shadow-2xl">
-      <div class="flex flex-col items-center mb-6">
-        <div class="p-3 rounded-full bg-accentBlue/10 text-accentBlue mb-3">
-          <i data-lucide="lock" class="w-8 h-8"></i>
-        </div>
-        <h2 class="text-2xl font-bold text-white">Autentificare Admin</h2>
-        <p class="text-sm text-textSecondary mt-1">Introduceți parola pentru a accesa consola</p>
+<body>
+  <div id="passwordModal" class="password-modal">
+    <div class="password-modal-content">
+      <h2>🔐 Autentificare Admin</h2>
+      <div class="form-group">
+        <label for="adminPasswordInput">Parolă:</label>
+        <input type="password" id="adminPasswordInput" placeholder="Introdu parola admin">
       </div>
-      <div class="space-y-4">
-        <div>
-          <label class="block text-sm font-medium mb-1.5 text-textPrimary">Parolă</label>
-          <input type="password" id="adminPasswordInput" class="w-full px-4 py-2.5 rounded-md border border-border bg-bgTertiary text-white focus:outline-none focus:border-accentBlue focus:ring-1 focus:ring-accentBlue" placeholder="Introdu parola admin">
-        </div>
-        <button onclick="checkPassword()" class="w-full py-2.5 rounded-md bg-accentBlue hover:bg-blue-600 text-white font-medium transition-all duration-200 flex items-center justify-center gap-2">
-          <i data-lucide="log-in" class="w-4 h-4"></i> Conectare
-        </button>
-        <div id="passwordError" class="hidden p-3 rounded bg-accentRed/10 border border-accentRed/20 text-accentRed text-sm text-center"></div>
-      </div>
+      <button onclick="checkPassword()" style="width: 100%;">Autentificare</button>
+      <div id="passwordError" class="alert alert-error" style="display: none; margin-top: 1rem;"></div>
     </div>
   </div>
 
-  <!-- Conținut Principal -->
-  <div id="mainContent" class="hidden flex flex-col min-h-screen">
-    <!-- Header -->
-    <header class="border-b border-border bg-bgSecondary py-5">
-      <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 flex flex-col sm:flex-row items-center justify-between gap-4">
-        <div class="flex items-center gap-3">
-          <div class="p-2 rounded-lg bg-accentBlue/10 text-accentBlue">
-            <i data-lucide="layers" class="w-6 h-6"></i>
-          </div>
-          <div>
-            <h1 class="text-xl font-bold text-white tracking-tight flex items-center gap-2">
-              🌌 Qwen-2API Gateway
-              <span class="text-xs font-normal px-2 py-0.5 rounded-full bg-accentBlue/20 text-accentBlue border border-accentBlue/30">v1.0.0</span>
-            </h1>
-            <p class="text-xs text-textSecondary">Panou de control administrativ și monitorizare</p>
-          </div>
-        </div>
-        <div class="flex items-center gap-3">
-          <span class="flex items-center gap-1.5 text-xs px-2.5 py-1 rounded-full bg-accentGreen/10 text-accentGreen border border-accentGreen/20">
-            <span class="w-2 h-2 rounded-full bg-accentGreen animate-pulse"></span>
-            Sistem Activ
-          </span>
-          <button onclick="logout()" class="p-2 rounded-md border border-border hover:bg-bgTertiary text-textSecondary hover:text-white transition-colors" title="Deconectare">
-            <i data-lucide="log-out" class="w-4 h-4"></i>
-          </button>
-        </div>
-      </div>
+  <div class="container" id="mainContent" style="display: none;">
+    <header>
+      <h1>🌌 Qwen-2API Gateway</h1>
+      <p class="subtitle">Centru de control și management v2.0.0</p>
     </header>
 
-    <!-- Navigare Tab-uri -->
-    <div class="border-b border-border bg-bgSecondary/50 sticky top-0 z-10 backdrop-blur-md">
-      <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-        <nav class="flex space-x-8 overflow-x-auto py-3" aria-label="Tabs">
-          <button onclick="switchTab('dashboard')" id="tab-dashboard" class="tab-btn active flex items-center gap-2 px-1 py-2 text-sm font-medium border-b-2 border-accentBlue text-accentBlue whitespace-nowrap">
-            <i data-lucide="layout-dashboard" class="w-4 h-4"></i> Tablou de bord
-          </button>
-          <button onclick="switchTab('tokens')" id="tab-tokens" class="tab-btn flex items-center gap-2 px-1 py-2 text-sm font-medium border-b-2 border-transparent text-textSecondary hover:text-textPrimary whitespace-nowrap">
-            <i data-lucide="key-round" class="w-4 h-4"></i> Gestionare Token-uri
-          </button>
-          <button onclick="switchTab('settings')" id="tab-settings" class="tab-btn flex items-center gap-2 px-1 py-2 text-sm font-medium border-b-2 border-transparent text-textSecondary hover:text-textPrimary whitespace-nowrap">
-            <i data-lucide="settings" class="w-4 h-4"></i> Setări Sistem
-          </button>
-          <button onclick="switchTab('logs')" id="tab-logs" class="tab-btn flex items-center gap-2 px-1 py-2 text-sm font-medium border-b-2 border-transparent text-textSecondary hover:text-textPrimary whitespace-nowrap">
-            <i data-lucide="terminal" class="w-4 h-4"></i> Loguri Sistem
-          </button>
-          <button onclick="switchTab('playground')" id="tab-playground" class="tab-btn flex items-center gap-2 px-1 py-2 text-sm font-medium border-b-2 border-transparent text-textSecondary hover:text-textPrimary whitespace-nowrap">
-            <i data-lucide="play" class="w-4 h-4"></i> Playground
-          </button>
-        </nav>
+    <div class="tabs">
+      <button class="tab active" data-tab="dashboard">📊 Tablou de bord</button>
+      <button class="tab" data-tab="tokens">🔑 Gestionare token-uri</button>
+      <button class="tab" data-tab="settings">⚙️ Setări sistem</button>
+      <button class="tab" data-tab="logs">📜 Loguri sistem</button>
+      <button class="tab" data-tab="playground">🎮 Playground</button>
+    </div>
+
+    <div id="dashboard" class="tab-content active">
+      <div class="stats-grid">
+        <div class="stat-card">
+          <div class="stat-value" id="tokenCount">-</div>
+          <div class="stat-label">Conturi token</div>
+        </div>
+        <div class="stat-card">
+          <div class="stat-value" id="totalCapacity">-</div>
+          <div class="stat-label">Capacitate totală</div>
+        </div>
+        <div class="stat-card">
+          <div class="stat-value" id="queuedRequests">-</div>
+          <div class="stat-label">În coadă</div>
+        </div>
+        <div class="stat-card">
+          <div class="stat-value" id="successRate">-</div>
+          <div class="stat-label">Rată succes</div>
+        </div>
+      </div>
+
+      <div class="card">
+        <h2>📈 Analitică performanță</h2>
+        <div class="chart-container">
+          <canvas id="successChart"></canvas>
+        </div>
+      </div>
+
+      <div class="card">
+        <h2>🔄 Status pool token-uri în timp real</h2>
+        <div style="overflow-x: auto;">
+          <table id="poolTable">
+            <thead>
+              <tr>
+                <th>Email</th>
+                <th>Status</th>
+                <th>Expirare</th>
+                <th>Activ/Max</th>
+                <th>Erori</th>
+              </tr>
+            </thead>
+            <tbody></tbody>
+          </table>
+        </div>
       </div>
     </div>
 
-    <!-- Conținut Principal Tab-uri -->
-    <main class="flex-1 max-w-7xl w-full mx-auto px-4 sm:px-6 lg:px-8 py-8">
-      
-      <!-- TAB: DASHBOARD -->
-      <div id="content-dashboard" class="tab-pane space-y-6">
-        <!-- Carduri Statistici -->
-        <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
-          <div class="p-5 rounded-lg border border-border bg-bgSecondary flex items-center justify-between">
-            <div>
-              <p class="text-xs font-medium text-textSecondary uppercase tracking-wider">Conturi Active</p>
-              <h3 class="text-2xl font-bold text-white mt-1" id="stat-active-accounts">0</h3>
-            </div>
-            <div class="p-3 rounded-lg bg-accentBlue/10 text-accentBlue">
-              <i data-lucide="users" class="w-6 h-6"></i>
-            </div>
-          </div>
-          <div class="p-5 rounded-lg border border-border bg-bgSecondary flex items-center justify-between">
-            <div>
-              <p class="text-xs font-medium text-textSecondary uppercase tracking-wider">Capacitate Totală</p>
-              <h3 class="text-2xl font-bold text-white mt-1" id="stat-total-capacity">0</h3>
-            </div>
-            <div class="p-3 rounded-lg bg-accentGreen/10 text-accentGreen">
-              <i data-lucide="zap" class="w-6 h-6"></i>
-            </div>
-          </div>
-          <div class="p-5 rounded-lg border border-border bg-bgSecondary flex items-center justify-between">
-            <div>
-              <p class="text-xs font-medium text-textSecondary uppercase tracking-wider">Cereri în Coadă</p>
-              <h3 class="text-2xl font-bold text-white mt-1" id="stat-queued-requests">0</h3>
-            </div>
-            <div class="p-3 rounded-lg bg-accentYellow/10 text-accentYellow">
-              <i data-lucide="hourglass" class="w-6 h-6"></i>
-            </div>
-          </div>
-          <div class="p-5 rounded-lg border border-border bg-bgSecondary flex items-center justify-between">
-            <div>
-              <p class="text-xs font-medium text-textSecondary uppercase tracking-wider">Rată de Succes</p>
-              <h3 class="text-2xl font-bold text-white mt-1" id="stat-success-rate">100%</h3>
-            </div>
-            <div class="p-3 rounded-lg bg-purple-500/10 text-purple-400">
-              <i data-lucide="check-circle" class="w-6 h-6"></i>
-            </div>
-          </div>
-        </div>
-
-        <!-- Grafice -->
-        <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
-          <div class="p-5 rounded-lg border border-border bg-bgSecondary">
-            <h3 class="text-sm font-semibold text-white mb-4 flex items-center gap-2">
-              <i data-lucide="activity" class="w-4 h-4 text-accentBlue"></i> Rată de Succes API (%)
-            </h3>
-            <div class="h-64">
-              <canvas id="successChart"></canvas>
-            </div>
-          </div>
-          <div class="p-5 rounded-lg border border-border bg-bgSecondary">
-            <h3 class="text-sm font-semibold text-white mb-4 flex items-center gap-2">
-              <i data-lucide="trending-up" class="w-4 h-4 text-accentGreen"></i> Timp de Răspuns Mediu (ms)
-            </h3>
-            <div class="h-64">
-              <canvas id="responseChart"></canvas>
-            </div>
-          </div>
-        </div>
-
-        <!-- Tabel Pool Token-uri -->
-        <div class="p-5 rounded-lg border border-border bg-bgSecondary">
-          <div class="flex items-center justify-between mb-4">
-            <h3 class="text-sm font-semibold text-white flex items-center gap-2">
-              <i data-lucide="database" class="w-4 h-4 text-accentBlue"></i> Stare Pool Token-uri în Timp Real
-            </h3>
-            <button onclick="refreshStats()" class="p-1.5 rounded hover:bg-bgTertiary text-textSecondary hover:text-white transition-colors">
-              <i data-lucide="refresh-cw" class="w-4 h-4"></i>
-            </button>
-          </div>
-          <div class="overflow-x-auto">
-            <table class="w-full text-left border-collapse">
-              <thead>
-                <tr class="border-b border-border text-xs font-semibold text-textSecondary uppercase tracking-wider">
-                  <th class="py-3 px-4">Email / Identificator</th>
-                  <th class="py-3 px-4">Tip</th>
-                  <th class="py-3 px-4">Status</th>
-                  <th class="py-3 px-4">Expirare</th>
-                  <th class="py-3 px-4">Conexiuni Active</th>
-                  <th class="py-3 px-4">Erori</th>
-                </tr>
-              </thead>
-              <tbody id="poolTableBody" class="divide-y divide-border text-sm">
-                <!-- Generat dinamic -->
-              </tbody>
-            </table>
-          </div>
+    <div id="tokens" class="tab-content">
+      <div class="card">
+        <h2>➕ Adaugă cont nou</h2>
+        <div class="button-group">
+          <button onclick="openTokenModal()">📝 Token manual</button>
+          <button onclick="openLoginModal()" class="success">🔐 Login parolă</button>
         </div>
       </div>
 
-      <!-- TAB: TOKENS -->
-      <div id="content-tokens" class="tab-pane hidden space-y-6">
-        <div class="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
-          <div>
-            <h2 class="text-lg font-bold text-white">Gestionare Token-uri</h2>
-            <p class="text-sm text-textSecondary">Adăugați, ștergeți sau reîmprospătați token-urile de acces Qwen</p>
-          </div>
-          <div class="flex gap-3">
-            <button onclick="openModal('addTokenModal')" class="px-4 py-2 rounded-md bg-accentBlue hover:bg-blue-600 text-white text-sm font-medium flex items-center gap-2 transition-colors">
-              <i data-lucide="plus" class="w-4 h-4"></i> Adaugă Token Manual
-            </button>
-            <button onclick="openModal('loginModal')" class="px-4 py-2 rounded-md bg-accentGreen hover:bg-green-600 text-white text-sm font-medium flex items-center gap-2 transition-colors">
-              <i data-lucide="key" class="w-4 h-4"></i> Autentificare cu Parolă
-            </button>
-          </div>
+      <div class="card">
+        <h2>📋 Conturi existente</h2>
+        <div style="overflow-x: auto;">
+          <table id="tokensTable">
+            <thead>
+              <tr>
+                <th>Email</th>
+                <th>Tip</th>
+                <th>Status</th>
+                <th>Expirare</th>
+                <th>Acțiuni</th>
+              </tr>
+            </thead>
+            <tbody></tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+
+    <div id="settings" class="tab-content">
+      <div class="card">
+        <h2>⚙️ Configurare sistem</h2>
+        <div class="alert alert-info">
+          💡 Modificările sunt salvate imediat și aplicate fără repornire
+        </div>
+        
+        <div class="form-group">
+          <label for="apiKeyInput">🔑 Cheie API (pentru /v1/*)</label>
+          <input type="text" id="apiKeyInput" placeholder="sk-your-api-key">
         </div>
 
-        <div class="p-5 rounded-lg border border-border bg-bgSecondary">
-          <div class="overflow-x-auto">
-            <table class="w-full text-left border-collapse">
-              <thead>
-                <tr class="border-b border-border text-xs font-semibold text-textSecondary uppercase tracking-wider">
-                  <th class="py-3 px-4">Email / Identificator</th>
-                  <th class="py-3 px-4">Tip</th>
-                  <th class="py-3 px-4">Status</th>
-                  <th class="py-3 px-4">Expirare</th>
-                  <th class="py-3 px-4 text-right">Acțiuni</th>
-                </tr>
-              </thead>
-              <tbody id="tokensTableBody" class="divide-y divide-border text-sm">
-                <!-- Generat dinamic -->
-              </tbody>
-            </table>
-          </div>
+        <div class="form-group">
+          <label for="adminPasswordInput2">🔐 Parolă admin consolă</label>
+          <input type="password" id="adminPasswordInput2" placeholder="admin123">
+        </div>
+
+        <div class="form-group">
+          <label for="maxConcurrentInput">⚡ Max concurrent pe token</label>
+          <input type="number" id="maxConcurrentInput" min="1" max="50" value="10">
+        </div>
+
+        <div class="form-group">
+          <label for="queueTimeoutInput">⏱️ Timeout coadă (ms)</label>
+          <input type="number" id="queueTimeoutInput" min="5000" max="120000" value="30000">
+        </div>
+
+        <button onclick="saveSettings()" class="success">💾 Salvează configurația</button>
+      </div>
+    </div>
+
+    <div id="logs" class="tab-content">
+      <div class="card">
+        <h2>📜 Loguri runtime sistem</h2>
+        <div class="button-group" style="margin-bottom: 1rem;">
+          <button onclick="refreshLogs()">🔄 Reîmprospătează</button>
+          <button onclick="exportLogs()" class="secondary">📥 Export CSV</button>
+        </div>
+        <div class="log-viewer" id="logViewer">
+          <div class="loading"></div>
+        </div>
+        <div class="pagination-controls">
+          <button onclick="loadSystemLogs(currentPage - 1)" id="prevLogsBtn" class="secondary">◀ Mai nou</button>
+          <span class="pagination-info" id="logsPagination">Pagina 1 din 1</span>
+          <button onclick="loadSystemLogs(currentPage + 1)" id="nextLogsBtn" class="secondary">Mai vechi ▶</button>
         </div>
       </div>
 
-      <!-- TAB: SETTINGS -->
-      <div id="content-settings" class="tab-pane hidden">
-        <div class="max-w-2xl p-6 rounded-lg border border-border bg-bgSecondary space-y-6">
-          <div>
-            <h2 class="text-lg font-bold text-white">Configurare Sistem</h2>
-            <p class="text-sm text-textSecondary">Modificările se aplică instantaneu, fără a fi necesară repornirea serviciului</p>
-          </div>
-
-          <div class="space-y-4">
-            <div>
-              <label class="block text-sm font-medium mb-1.5 text-textPrimary">Cheie API Gateway (pentru /v1/*)</label>
-              <input type="text" id="setting-api-key" class="w-full px-4 py-2 rounded-md border border-border bg-bgTertiary text-white focus:outline-none focus:border-accentBlue" placeholder="sk-your-api-key">
-              <p class="text-xs text-textSecondary mt-1">Lăsați gol pentru a permite accesul public fără cheie API</p>
-            </div>
-
-            <div>
-              <label class="block text-sm font-medium mb-1.5 text-textPrimary">Parolă Admin Consolă</label>
-              <input type="password" id="setting-admin-password" class="w-full px-4 py-2 rounded-md border border-border bg-bgTertiary text-white focus:outline-none focus:border-accentBlue" placeholder="Parolă nouă pentru consolă">
-              <p class="text-xs text-textSecondary mt-1">Protejează accesul la acest panou de control administrativ</p>
-            </div>
-
-            <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
-              <div>
-                <label class="block text-sm font-medium mb-1.5 text-textPrimary">Max Conexiuni per Token</label>
-                <input type="number" id="setting-max-concurrent" min="1" max="50" class="w-full px-4 py-2 rounded-md border border-border bg-bgTertiary text-white focus:outline-none focus:border-accentBlue">
-                <p class="text-xs text-textSecondary mt-1">Număr maxim de cereri simultane per cont</p>
-              </div>
-              <div>
-                <label class="block text-sm font-medium mb-1.5 text-textPrimary">Timeout Coadă (ms)</label>
-                <input type="number" id="setting-queue-timeout" min="1000" class="w-full px-4 py-2 rounded-md border border-border bg-bgTertiary text-white focus:outline-none focus:border-accentBlue">
-                <p class="text-xs text-textSecondary mt-1">Timp maxim de așteptare în coadă</p>
-              </div>
-            </div>
-          </div>
-
-          <div class="pt-4 border-t border-border flex justify-end">
-            <button onclick="saveSettings()" class="px-5 py-2.5 rounded-md bg-accentGreen hover:bg-green-600 text-white font-medium text-sm flex items-center gap-2 transition-colors">
-              <i data-lucide="save" class="w-4 h-4"></i> Salvează Configurația
-            </button>
-          </div>
+      <div class="card">
+        <h2>📊 Loguri apeluri recente</h2>
+        <div class="button-group" style="margin-bottom: 1rem;">
+          <button onclick="exportRecentLogs()" class="secondary">📥 Export CSV</button>
+        </div>
+        <div style="overflow-x: auto;">
+          <table id="recentLogsTable">
+            <thead>
+              <tr>
+                <th>Timestamp</th>
+                <th>Model</th>
+                <th>Status</th>
+                <th>Durată (ms)</th>
+                <th>Token-uri</th>
+              </tr>
+            </thead>
+            <tbody></tbody>
+          </table>
         </div>
       </div>
+    </div>
 
-      <!-- TAB: LOGS -->
-      <div id="content-logs" class="tab-pane hidden space-y-6">
-        <!-- Loguri Sistem -->
-        <div class="p-5 rounded-lg border border-border bg-bgSecondary space-y-4">
-          <div class="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
-            <div>
-              <h3 class="text-sm font-semibold text-white flex items-center gap-2">
-                <i data-lucide="terminal" class="w-4 h-4 text-accentBlue"></i> Loguri Runtime Sistem
-              </h3>
-              <p class="text-xs text-textSecondary">Vizualizare în timp real a activității gateway-ului</p>
-            </div>
-            <div class="flex gap-2">
-              <button onclick="loadSystemLogs(1)" class="px-3 py-1.5 rounded border border-border hover:bg-bgTertiary text-xs font-medium text-textPrimary flex items-center gap-1.5 transition-colors">
-                <i data-lucide="refresh-cw" class="w-3.5 h-3.5"></i> Reîmprospătează
-              </button>
-              <button onclick="exportSystemLogs()" class="px-3 py-1.5 rounded border border-border hover:bg-bgTertiary text-xs font-medium text-textPrimary flex items-center gap-1.5 transition-colors">
-                <i data-lucide="download" class="w-3.5 h-3.5"></i> Export CSV
-              </button>
-            </div>
-          </div>
+    <div id="playground" class="tab-content">
+      <div class="card">
+        <h2>🎮 Playground chat interactiv</h2>
+        <div class="alert alert-info">
+          💡 Testează API-ul în timp real cu suport pentru fișiere și toți agenții Qwen disponibili.
+        </div>
 
-          <div id="logViewer" class="h-96 overflow-y-auto p-4 rounded border border-border bg-bgPrimary font-mono text-xs space-y-1 text-textSecondary">
-            <!-- Logurile vor fi încărcate aici -->
-          </div>
+        <div class="form-group model-selector">
+          <label for="playgroundModel">Model / Agent:</label>
+          <select id="playgroundModel">
+            <option value="qwen-max">qwen-max (Cel mai inteligent)</option>
+            <option value="qwen-max-thinking">qwen-max-thinking (Cu raționament/gândire)</option>
+            <option value="qwen-max-deep-research">qwen-max-deep-research (Cercetare profundă)</option>
+            <option value="qwen-plus">qwen-plus (Echilibrat)</option>
+            <option value="qwen-plus-thinking">qwen-plus-thinking (Echilibrat cu gândire)</option>
+            <option value="qwen-turbo">qwen-turbo (Rapid)</option>
+            <option value="qwen-vl-max">qwen-vl-max (Vision/Multimodal)</option>
+            <option value="qwen-max-image">qwen-max-image (Generare imagini)</option>
+            <option value="qwen-max-webdev">qwen-max-webdev (Dezvoltare web)</option>
+            <option value="qwen-max-slides">qwen-max-slides (Prezentări)</option>
+          </select>
+        </div>
 
-          <div class="flex items-center justify-between text-xs text-textSecondary pt-2">
-            <span id="logsPaginationInfo">Pagina 1 din 1</span>
-            <div class="flex gap-2">
-              <button id="prevLogsBtn" onclick="changeLogsPage(-1)" class="px-2.5 py-1 rounded border border-border hover:bg-bgTertiary disabled:opacity-50 disabled:pointer-events-none">
-                ◀ Mai nou
+        <div class="chat-container">
+          <div class="chat-messages" id="chatMessages"></div>
+          
+          <div class="chat-input-container">
+            <!-- File Preview Area -->
+            <div id="filePreviewContainer" class="file-preview-container" style="display: none;"></div>
+            
+            <div class="chat-input-wrapper">
+              <!-- File Upload Button -->
+              <button class="upload-btn" onclick="triggerFileUpload()" title="Încarcă fișier (Imagine, PDF, Audio)">
+                📎
               </button>
-              <button id="nextLogsBtn" onclick="changeLogsPage(1)" class="px-2.5 py-1 rounded border border-border hover:bg-bgTertiary disabled:opacity-50 disabled:pointer-events-none">
-                Mai vechi ▶
+              <input type="file" id="chatFileInput" style="display: none;" onchange="handleFileSelect(event)">
+              
+              <textarea 
+                id="chatInput" 
+                class="chat-input" 
+                placeholder="Scrie mesajul tău aici... (Shift+Enter pentru linie nouă, Enter pentru trimitere)"
+                onkeydown="if(event.key==='Enter' && !event.shiftKey){event.preventDefault();sendChatMessage();}"
+              ></textarea>
+              <button onclick="sendChatMessage()" class="send-button">
+                📤 Trimite
               </button>
             </div>
           </div>
         </div>
 
-        <!-- Loguri Apeluri Recente -->
-        <div class="p-5 rounded-lg border border-border bg-bgSecondary space-y-4">
-          <div class="flex items-center justify-between">
-            <h3 class="text-sm font-semibold text-white flex items-center gap-2">
-              <i data-lucide="history" class="w-4 h-4 text-accentGreen"></i> Istoric Apeluri Recente
-            </h3>
-            <button onclick="exportRecentCalls()" class="px-3 py-1.5 rounded border border-border hover:bg-bgTertiary text-xs font-medium text-textPrimary flex items-center gap-1.5 transition-colors">
-              <i data-lucide="download" class="w-3.5 h-3.5"></i> Export CSV
-            </button>
-          </div>
-          <div class="overflow-x-auto">
-            <table class="w-full text-left border-collapse">
-              <thead>
-                <tr class="border-b border-border text-xs font-semibold text-textSecondary uppercase tracking-wider">
-                  <th class="py-3 px-4">Timestamp</th>
-                  <th class="py-3 px-4">Model</th>
-                  <th class="py-3 px-4">Status</th>
-                  <th class="py-3 px-4">Durată (ms)</th>
-                  <th class="py-3 px-4">Token-uri Utilizate</th>
-                </tr>
-              </thead>
-              <tbody id="recentCallsTableBody" class="divide-y divide-border text-sm">
-                <!-- Generat dinamic -->
-              </tbody>
-            </table>
-          </div>
-        </div>
-      </div>
-
-      <!-- TAB: PLAYGROUND -->
-      <div id="content-playground" class="tab-pane hidden space-y-6">
-        <div class="p-5 rounded-lg border border-border bg-bgSecondary space-y-4">
-          <div class="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
-            <div>
-              <h2 class="text-lg font-bold text-white">Playground Chat</h2>
-              <p class="text-sm text-textSecondary">Testează capabilitățile modelului Qwen în timp real</p>
-            </div>
-            <div class="flex items-center gap-3 w-full sm:w-auto">
-              <label class="text-sm font-medium text-textPrimary whitespace-nowrap">Model:</label>
-              <select id="playgroundModel" class="px-3 py-1.5 rounded border border-border bg-bgTertiary text-white text-sm focus:outline-none focus:border-accentBlue w-full sm:w-48">
-                <option value="qwen-max">qwen-max</option>
-                <option value="qwen-plus">qwen-plus</option>
-                <option value="qwen-turbo">qwen-turbo</option>
-                <option value="qwen-vl-max">qwen-vl-max (Vision)</option>
-              </select>
-            </div>
-          </div>
-
-          <!-- Fereastră Chat -->
-          <div class="border border-border rounded-lg bg-bgPrimary flex flex-col h-[500px]">
-            <div id="chatMessages" class="flex-1 overflow-y-auto p-4 space-y-4">
-              <div class="flex items-start gap-3 max-w-3xl">
-                <div class="w-8 h-8 rounded-full bg-accentBlue/10 text-accentBlue flex items-center justify-center flex-shrink-0">
-                  <i data-lucide="bot" class="w-4 h-4"></i>
-                </div>
-                <div class="p-3 rounded-lg bg-bgSecondary border border-border text-sm">
-                  Salut! Cum te pot ajuta astăzi? Poți testa răspunsurile text, generarea de imagini sau procesarea de documente.
-                </div>
-              </div>
-            </div>
-
-            <!-- Input Chat -->
-            <div class="p-3 border-t border-border bg-bgSecondary flex gap-2 items-end">
-              <textarea id="chatInput" rows="1" class="flex-1 px-4 py-2.5 rounded-md border border-border bg-bgTertiary text-white text-sm focus:outline-none focus:border-accentBlue resize-none" placeholder="Scrie un mesaj... (Shift+Enter pentru linie nouă)"></textarea>
-              <button onclick="sendChatMessage()" class="p-2.5 rounded-md bg-accentBlue hover:bg-blue-600 text-white transition-colors flex-shrink-0">
-                <i data-lucide="send" class="w-4 h-4"></i>
-              </button>
-            </div>
-          </div>
-        </div>
-      </div>
-
-    </main>
-  </div>
-
-  <!-- MODAL: ADAUGĂ TOKEN MANUAL -->
-  <div id="addTokenModal" class="fixed inset-0 z-50 hidden items-center justify-center bg-black/75 backdrop-blur-sm">
-    <div class="w-full max-w-lg p-6 rounded-lg border border-border bg-bgSecondary shadow-2xl">
-      <div class="flex items-center justify-between mb-4">
-        <h3 class="text-lg font-bold text-white flex items-center gap-2">
-          <i data-lucide="plus-circle" class="w-5 h-5 text-accentBlue"></i> Adaugă Token Manual
-        </h3>
-        <button onclick="closeModal('addTokenModal')" class="text-textSecondary hover:text-white">
-          <i data-lucide="x" class="w-5 h-5"></i>
-        </button>
-      </div>
-      <div class="space-y-4">
-        <div>
-          <label class="block text-sm font-medium mb-1.5 text-textPrimary">Token JWT Qwen</label>
-          <textarea id="manualTokenInput" rows="5" class="w-full px-4 py-2 rounded-md border border-border bg-bgTertiary text-white font-mono text-xs focus:outline-none focus:border-accentBlue" placeholder="Introdu token-ul JWT complet (începe cu eyJ...)"></textarea>
-        </div>
-        <div class="flex justify-end gap-3">
-          <button onclick="closeModal('addTokenModal')" class="px-4 py-2 rounded-md border border-border hover:bg-bgTertiary text-sm font-medium text-textPrimary">
-            Anulează
-          </button>
-          <button onclick="submitManualToken()" class="px-4 py-2 rounded-md bg-accentBlue hover:bg-blue-600 text-white text-sm font-medium">
-            Adaugă Token
-          </button>
+        <div class="button-group" style="margin-top: 1rem;">
+          <button onclick="clearChat()" class="secondary">🗑️ Șterge conversație</button>
         </div>
       </div>
     </div>
   </div>
 
-  <!-- MODAL: AUTENTIFICARE CU PAROLĂ -->
-  <div id="loginModal" class="fixed inset-0 z-50 hidden items-center justify-center bg-black/75 backdrop-blur-sm">
-    <div class="w-full max-w-md p-6 rounded-lg border border-border bg-bgSecondary shadow-2xl">
-      <div class="flex items-center justify-between mb-4">
-        <h3 class="text-lg font-bold text-white flex items-center gap-2">
-          <i data-lucide="key" class="w-5 h-5 text-accentGreen"></i> Autentificare Cont Qwen
-        </h3>
-        <button onclick="closeModal('loginModal')" class="text-textSecondary hover:text-white">
-          <i data-lucide="x" class="w-5 h-5"></i>
-        </button>
+  <!-- Modals -->
+  <div id="tokenModal" class="modal">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h3 class="modal-title">📝 Adaugă token manual</h3>
+        <button class="close-modal" onclick="closeTokenModal()">×</button>
       </div>
-      <div class="space-y-4">
-        <div>
-          <label class="block text-sm font-medium mb-1.5 text-textPrimary">Email Cont Qwen</label>
-          <input type="text" id="loginEmailInput" class="w-full px-4 py-2 rounded-md border border-border bg-bgTertiary text-white focus:outline-none focus:border-accentBlue" placeholder="nume@exemplu.com">
-        </div>
-        <div>
-          <label class="block text-sm font-medium mb-1.5 text-textPrimary">Parolă Cont Qwen</label>
-          <input type="password" id="loginPasswordInput" class="w-full px-4 py-2 rounded-md border border-border bg-bgTertiary text-white focus:outline-none focus:border-accentBlue" placeholder="Parola contului Qwen">
-        </div>
-        <div class="flex justify-end gap-3">
-          <button onclick="closeModal('loginModal')" class="px-4 py-2 rounded-md border border-border hover:bg-bgTertiary text-sm font-medium text-textPrimary">
-            Anulează
-          </button>
-          <button onclick="submitLoginToken()" class="px-4 py-2 rounded-md bg-accentGreen hover:bg-green-600 text-white text-sm font-medium">
-            Autentificare și Salvare
-          </button>
-        </div>
+      <div class="form-group">
+        <label for="tokenInput">Token JWT:</label>
+        <textarea id="tokenInput" rows="4" placeholder="Introdu token-ul JWT..."></textarea>
       </div>
+      <button onclick="submitToken()" class="success" style="width: 100%;">Adaugă Token</button>
     </div>
   </div>
 
-  <!-- MODAL: REÎMPROSPĂTARE TOKEN MANUAL -->
-  <div id="refreshTokenModal" class="fixed inset-0 z-50 hidden items-center justify-center bg-black/75 backdrop-blur-sm">
-    <div class="w-full max-w-lg p-6 rounded-lg border border-border bg-bgSecondary shadow-2xl">
-      <div class="flex items-center justify-between mb-4">
-        <h3 class="text-lg font-bold text-white flex items-center gap-2">
-          <i data-lucide="refresh-cw" class="w-5 h-5 text-accentYellow"></i> Actualizare Token Manual
-        </h3>
-        <button onclick="closeModal('refreshTokenModal')" class="text-textSecondary hover:text-white">
-          <i data-lucide="x" class="w-5 h-5"></i>
-        </button>
+  <div id="loginModal" class="modal">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h3 class="modal-title">🔐 Autentificare cont Qwen</h3>
+        <button class="close-modal" onclick="closeLoginModal()">×</button>
       </div>
-      <div class="space-y-4">
-        <input type="hidden" id="refreshEmailTarget">
-        <div>
-          <label class="block text-sm font-medium mb-1.5 text-textPrimary">Nou Token JWT pentru <span id="refreshEmailLabel" class="text-accentBlue"></span></label>
-          <textarea id="refreshManualTokenInput" rows="5" class="w-full px-4 py-2 rounded-md border border-border bg-bgTertiary text-white font-mono text-xs focus:outline-none focus:border-accentBlue" placeholder="Introdu noul token JWT complet (începe cu eyJ...)"></textarea>
-        </div>
-        <div class="flex justify-end gap-3">
-          <button onclick="closeModal('refreshTokenModal')" class="px-4 py-2 rounded-md border border-border hover:bg-bgTertiary text-sm font-medium text-textPrimary">
-            Anulează
-          </button>
-          <button onclick="submitRefreshManualToken()" class="px-4 py-2 rounded-md bg-accentYellow hover:bg-yellow-600 text-white text-sm font-medium">
-            Actualizează Token
-          </button>
-        </div>
+      <div class="form-group">
+        <label for="loginEmail">Email:</label>
+        <input type="text" id="loginEmail" placeholder="email@exemplu.com">
       </div>
+      <div class="form-group">
+        <label for="loginPassword">Parolă:</label>
+        <input type="password" id="loginPassword" placeholder="Parolă cont Qwen">
+      </div>
+      <button onclick="submitLogin()" class="success" style="width: 100%;">Autentificare și Adăugare</button>
     </div>
   </div>
 
   <script>
-    let adminToken = localStorage.getItem('adminToken') || '';
+    let adminPassword = '';
+    let apiKey = '';
     let currentPage = 1;
-    const logsLimit = 100;
-    let successChartInstance = null;
-    let responseChartInstance = null;
+    let totalPages = 1;
+    let successChart = null;
+    let chatHistory = [];
+    let uploadedFile = null; // Holds { name, type, dataUrl }
 
-    // Inițializare Lucide Icons
-    function initIcons() {
-      if (window.lucide) {
-        window.lucide.createIcons();
-      }
-    }
-
-    // Verificare parolă la pornire
-    document.addEventListener('DOMContentLoaded', () => {
-      if (adminToken) {
-        document.getElementById('passwordModal').classList.add('hidden');
-        document.getElementById('mainContent').classList.remove('hidden');
-        initDashboard();
-      } else {
-        document.getElementById('passwordModal').classList.remove('flex');
-        document.getElementById('passwordModal').classList.add('flex');
-      }
-      initIcons();
+    // Tab switching
+    document.querySelectorAll('.tab').forEach(tab => {
+      tab.addEventListener('click', () => {
+        document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
+        document.querySelectorAll('.tab-content').forEach(c => c.classList.remove('active'));
+        tab.classList.add('active');
+        document.getElementById(tab.dataset.tab).classList.add('active');
+        if (tab.dataset.tab === 'logs') {
+          loadSystemLogs(1);
+        }
+      });
     });
 
-    async function checkPassword() {
-      const password = document.getElementById('adminPasswordInput').value;
-      if (!password) return;
-
-      try {
-        const res = await fetch('/admin/api/stats', {
-          headers: { 'Authorization': `Bearer ${password}` }
-        });
+    function checkPassword() {
+      const pwd = document.getElementById('adminPasswordInput').value;
+      fetch('/admin/api/stats', {
+        headers: { 'Authorization': `Bearer ${pwd}` }
+      })
+      .then(res => {
         if (res.ok) {
-          adminToken = password;
-          localStorage.setItem('adminToken', adminToken);
-          document.getElementById('passwordModal').classList.add('hidden');
-          document.getElementById('mainContent').classList.remove('hidden');
-          initDashboard();
+          adminPassword = pwd;
+          document.getElementById('passwordModal').style.display = 'none';
+          document.getElementById('mainContent').style.display = 'block';
+          startPolling();
+          fetchDynamicModels();
         } else {
-          showPasswordError('Parolă incorectă!');
+          document.getElementById('passwordError').innerText = 'Parolă incorectă!';
+          document.getElementById('passwordError').style.display = 'block';
         }
-      } catch (err) {
-        showPasswordError('Eroare de conexiune la server');
-      }
-    }
-
-    function showPasswordError(msg) {
-      const errDiv = document.getElementById('passwordError');
-      errDiv.innerText = msg;
-      errDiv.classList.remove('hidden');
-    }
-
-    function logout() {
-      adminToken = '';
-      localStorage.removeItem('adminToken');
-      document.getElementById('mainContent').classList.add('hidden');
-      document.getElementById('passwordModal').classList.remove('hidden');
-      document.getElementById('passwordModal').classList.add('flex');
-      document.getElementById('adminPasswordInput').value = '';
-      document.getElementById('passwordError').classList.add('hidden');
-    }
-
-    // Navigare Tab-uri
-    function switchTab(tabId) {
-      document.querySelectorAll('.tab-btn').forEach(btn => {
-        btn.classList.remove('text-accentBlue', 'border-accentBlue');
-        btn.classList.add('text-textSecondary', 'border-transparent');
+      })
+      .catch(err => {
+        document.getElementById('passwordError').innerText = 'Eroare de conexiune!';
+        document.getElementById('passwordError').style.display = 'block';
       });
-      document.querySelectorAll('.tab-pane').forEach(pane => pane.classList.add('hidden'));
-
-      const activeBtn = document.getElementById(`tab-${tabId}`);
-      activeBtn.classList.remove('text-textSecondary', 'border-transparent');
-      activeBtn.classList.add('text-accentBlue', 'border-accentBlue');
-
-      document.getElementById(`content-${tabId}`).classList.remove('hidden');
-
-      if (tabId === 'dashboard') {
-        refreshStats();
-      } else if (tabId === 'tokens') {
-        loadTokensList();
-      } else if (tabId === 'logs') {
-        loadSystemLogs(1);
-        loadRecentCalls();
-      }
-      initIcons();
     }
 
-    // Modale
-    function openModal(id) {
-      const modal = document.getElementById(id);
-      modal.classList.remove('hidden');
-      modal.classList.add('flex');
+    // Trigger password check on Enter
+    document.getElementById('adminPasswordInput').addEventListener('keypress', (e) => {
+      if (e.key === 'Enter') checkPassword();
+    });
+
+    function startPolling() {
+      refreshStats();
+      setInterval(refreshStats, 5000);
     }
 
-    function closeModal(id) {
-      const modal = document.getElementById(id);
-      modal.classList.remove('flex');
-      modal.classList.add('hidden');
-    }
-
-    // API Requests Helper
-    async function apiRequest(url, options = {}) {
-      options.headers = options.headers || {};
-      options.headers['Authorization'] = `Bearer ${adminToken}`;
-      if (options.body && typeof options.body === 'object') {
-        options.headers['Content-Type'] = 'application/json';
-        options.body = JSON.stringify(options.body);
-      }
-      const res = await fetch(url, options);
-      if (res.status === 401) {
-        logout();
-        throw new Error('Sesiune expirată');
-      }
-      return res;
-    }
-
-    // Dashboard & Stats
-    async function initDashboard() {
-      await refreshStats();
-      setInterval(refreshStats, 10000);
-    }
-
-    async function refreshStats() {
-      try {
-        const res = await apiRequest('/admin/api/stats');
-        const data = await res.json();
+    function refreshStats() {
+      fetch('/admin/api/stats', {
+        headers: { 'Authorization': `Bearer ${adminPassword}` }
+      })
+      .then(res => res.json())
+      .then(data => {
         if (data.status === 'ok') {
-          // Update Stats Cards
-          document.getElementById('stat-active-accounts').innerText = data.pool.length;
-          document.getElementById('stat-total-capacity').innerText = data.totalCapacity;
-          document.getElementById('stat-queued-requests').innerText = data.queue.queued;
-          document.getElementById('stat-success-rate').innerText = `${data.analytics.successRate}%`;
+          apiKey = data.config.apiKey;
+          document.getElementById('tokenCount').innerText = data.pool.length;
+          document.getElementById('totalCapacity').innerText = data.totalCapacity;
+          document.getElementById('queuedRequests').innerText = data.queue.queued;
+          document.getElementById('successRate').innerText = data.analytics.successRate + '%';
 
-          // Update Settings Inputs (only if not focused to avoid overwriting user input)
-          updateInputIfUnfocused('setting-api-key', data.config.apiKey);
-          updateInputIfUnfocused('setting-max-concurrent', data.config.maxConcurrentPerToken);
-          updateInputIfUnfocused('setting-queue-timeout', data.config.queueTimeoutMs);
+          // Update settings inputs if not focused
+          if (document.activeElement !== document.getElementById('apiKeyInput')) {
+            document.getElementById('apiKeyInput').value = data.config.apiKey;
+          }
+          if (document.activeElement !== document.getElementById('adminPasswordInput2')) {
+            document.getElementById('adminPasswordInput2').value = data.config.adminPassword;
+          }
+          if (document.activeElement !== document.getElementById('maxConcurrentInput')) {
+            document.getElementById('maxConcurrentInput').value = data.config.maxConcurrentPerToken;
+          }
+          if (document.activeElement !== document.getElementById('queueTimeoutInput')) {
+            document.getElementById('queueTimeoutInput').value = data.config.queueTimeoutMs;
+          }
 
-          // Update Pool Table
+          // Render tables
           renderPoolTable(data.pool);
-
-          // Update Charts
+          renderTokensTable(data.pool);
+          renderRecentLogs(data.analytics.recentLogs);
           renderCharts(data.analytics.recentLogs);
         }
-      } catch (err) {
-        console.error('Eroare la încărcarea statisticilor:', err);
-      }
-    }
-
-    function updateInputIfUnfocused(id, val) {
-      const el = document.getElementById(id);
-      if (el && document.activeElement !== el) {
-        el.value = val !== undefined ? val : '';
-      }
+      });
     }
 
     function renderPoolTable(pool) {
-      const tbody = document.getElementById('poolTableBody');
-      tbody.innerHTML = '';
-      if (pool.length === 0) {
-        tbody.innerHTML = `<tr><td colspan="6" class="py-4 text-center text-textSecondary">Niciun cont configurat în pool</td></tr>`;
-        return;
-      }
-
-      pool.forEach(item => {
-        const statusClass = item.errorCount >= 3 ? 'bg-accentRed/10 text-accentRed border-accentRed/20' : 'bg-accentGreen/10 text-accentGreen border-accentGreen/20';
-        const statusText = item.errorCount >= 3 ? 'Eroare' : 'Activ';
-        const typeText = item.isManual ? 'Manual (JWT)' : 'Automat (Parolă)';
-        const expDate = item.expiresAt ? new Date(item.expiresAt).toLocaleString('ro-RO') : 'Nespecificat';
-
-        const tr = document.createElement('tr');
-        tr.className = 'hover:bg-bgTertiary/30 transition-colors';
-        tr.innerHTML = `
-          <td class="py-3 px-4 font-medium text-white">${item.email}</td>
-          <td class="py-3 px-4 text-textSecondary">${typeText}</td>
-          <td class="py-3 px-4">
-            <span class="px-2 py-0.5 rounded-full text-xs border ${statusClass}">${statusText}</span>
+      const tbody = document.querySelector('#poolTable tbody');
+      tbody.innerHTML = pool.map(t => `
+        <tr>
+          <td>${t.email}</td>
+          <td>
+            <span class="status-badge ${t.errorCount >= 3 ? 'status-offline' : t.activeRequests >= t.maxConcurrent ? 'status-warning' : 'status-online'}">
+              ${t.errorCount >= 3 ? 'Eroare' : t.activeRequests >= t.maxConcurrent ? 'Plin' : 'Activ'}
+            </span>
           </td>
-          <td class="py-3 px-4 text-textSecondary text-xs">${expDate}</td>
-          <td class="py-3 px-4 text-white font-semibold">${item.activeRequests} / ${item.maxConcurrent}</td>
-          <td class="py-3 px-4 text-accentRed">${item.errorCount}</td>
-        `;
-        tbody.appendChild(tr);
-      });
+          <td>${t.expiresAt ? new Date(t.expiresAt).toLocaleString('ro-RO') : 'N/A'}</td>
+          <td>${t.activeRequests}/${t.maxConcurrent}</td>
+          <td>${t.errorCount}</td>
+        </tr>
+      `).join('');
     }
 
-    // Renderizare Grafice
-    function renderCharts(recentLogs) {
-      const labels = recentLogs.map((_, i) => `Apel ${i + 1}`);
-      const successData = recentLogs.map(l => l.status === 'success' ? 100 : 0);
-      const durationData = recentLogs.map(l => l.duration);
+    function renderTokensTable(pool) {
+      const tbody = document.querySelector('#tokensTable tbody');
+      tbody.innerHTML = pool.map(t => `
+        <tr>
+          <td>${t.email}</td>
+          <td>${t.isManual ? 'Manual' : 'Parolă'}</td>
+          <td>
+            <span class="status-badge ${t.errorCount >= 3 ? 'status-offline' : 'status-online'}">
+              ${t.errorCount >= 3 ? 'Inactiv' : 'Activ'}
+            </span>
+          </td>
+          <td>${t.expiresAt ? new Date(t.expiresAt).toLocaleString('ro-RO') : 'N/A'}</td>
+          <td>
+            <div class="button-group">
+              <button onclick="refreshToken('${t.email}', ${t.isManual})" class="secondary">🔄 Refresh</button>
+              <button onclick="deleteToken('${t.email}')" class="danger">🗑️ Șterge</button>
+            </div>
+          </td>
+        </tr>
+      `).join('');
+    }
 
-      // Success Rate Chart
-      if (successChartInstance) {
-        successChartInstance.data.labels = labels;
-        successChartInstance.data.datasets[0].data = successData;
-        successChartInstance.update();
+    function renderRecentLogs(logs) {
+      const tbody = document.querySelector('#recentLogsTable tbody');
+      tbody.innerHTML = logs.map(l => `
+        <tr>
+          <td>${new Date(l.timestamp).toLocaleTimeString('ro-RO')}</td>
+          <td>${l.model}</td>
+          <td>
+            <span class="status-badge ${l.status === 'success' ? 'status-online' : 'status-offline'}">
+              ${l.status}
+            </span>
+          </td>
+          <td>${l.duration} ms</td>
+          <td>${l.tokens || 0}</td>
+        </tr>
+      `).join('');
+    }
+
+    function renderCharts(logs) {
+      const ctx = document.getElementById('successChart').getContext('2d');
+      const labels = logs.map(l => new Date(l.timestamp).toLocaleTimeString('ro-RO')).reverse();
+      const durations = logs.map(l => l.duration).reverse();
+
+      if (successChart) {
+        successChart.data.labels = labels;
+        successChart.data.datasets[0].data = durations;
+        successChart.update();
       } else {
-        const ctx = document.getElementById('successChart').getContext('2d');
-        successChartInstance = new Chart(ctx, {
+        successChart = new Chart(ctx, {
           type: 'line',
           data: {
             labels: labels,
             datasets: [{
-              label: 'Succes (100) / Eroare (0)',
-              data: successData,
+              label: 'Timp de răspuns (ms)',
+              data: durations,
               borderColor: '#58a6ff',
               backgroundColor: 'rgba(88, 166, 255, 0.1)',
               borderWidth: 2,
               fill: true,
-              tension: 0.3
+              tension: 0.4
             }]
           },
           options: {
             responsive: true,
             maintainAspectRatio: false,
             scales: {
-              y: { min: 0, max: 100, grid: { color: '#30363d' }, ticks: { color: '#8b949e' } },
-              x: { grid: { display: false }, ticks: { display: false } }
+              x: { grid: { color: '#30363d' }, ticks: { color: '#8b949e' } },
+              y: { grid: { color: '#30363d' }, ticks: { color: '#8b949e' } }
             },
-            plugins: { legend: { display: false } }
-          }
-        });
-      }
-
-      // Response Speed Chart
-      if (responseChartInstance) {
-        responseChartInstance.data.labels = labels;
-        responseChartInstance.data.datasets[0].data = durationData;
-        responseChartInstance.update();
-      } else {
-        const ctx = document.getElementById('responseChart').getContext('2d');
-        responseChartInstance = new Chart(ctx, {
-          type: 'bar',
-          data: {
-            labels: labels,
-            datasets: [{
-              label: 'Durată (ms)',
-              data: durationData,
-              backgroundColor: '#3fb950',
-              borderRadius: 4
-            }]
-          },
-          options: {
-            responsive: true,
-            maintainAspectRatio: false,
-            scales: {
-              y: { grid: { color: '#30363d' }, ticks: { color: '#8b949e' } },
-              x: { grid: { display: false }, ticks: { display: false } }
-            },
-            plugins: { legend: { display: false } }
-          }
-        });
-      }
-    }
-
-    // Tokens Management
-    async function loadTokensList() {
-      try {
-        const res = await apiRequest('/admin/api/stats');
-        const data = await res.json();
-        if (data.status === 'ok') {
-          renderTokensTable(data.pool);
-        }
-      } catch (err) {
-        console.error('Eroare la încărcarea listei de token-uri:', err);
-      }
-    }
-
-    function renderTokensTable(pool) {
-      const tbody = document.getElementById('tokensTableBody');
-      tbody.innerHTML = '';
-      if (pool.length === 0) {
-        tbody.innerHTML = `<tr><td colspan="5" class="py-4 text-center text-textSecondary">Niciun token configurat</td></tr>`;
-        return;
-      }
-
-      pool.forEach(item => {
-        const statusClass = item.errorCount >= 3 ? 'bg-accentRed/10 text-accentRed border-accentRed/20' : 'bg-accentGreen/10 text-accentGreen border-accentGreen/20';
-        const statusText = item.errorCount >= 3 ? 'Eroare' : 'Activ';
-        const typeText = item.isManual ? 'Manual (JWT)' : 'Automat (Parolă)';
-        const expDate = item.expiresAt ? new Date(item.expiresAt).toLocaleString('ro-RO') : 'Nespecificat';
-
-        const tr = document.createElement('tr');
-        tr.className = 'hover:bg-bgTertiary/30 transition-colors';
-        tr.innerHTML = `
-          <td class="py-3 px-4 font-medium text-white">${item.email}</td>
-          <td class="py-3 px-4 text-textSecondary">${typeText}</td>
-          <td class="py-3 px-4">
-            <span class="px-2 py-0.5 rounded-full text-xs border ${statusClass}">${statusText}</span>
-          </td>
-          <td class="py-3 px-4 text-textSecondary text-xs">${expDate}</td>
-          <td class="py-3 px-4 text-right space-x-2">
-            <button onclick="triggerRefresh('${item.email}', ${item.isManual})" class="px-2.5 py-1 rounded border border-border hover:bg-bgTertiary text-xs font-medium text-accentYellow hover:text-yellow-400 transition-colors">
-              Reîmprospătează
-            </button>
-            <button onclick="deleteToken('${item.email}')" class="px-2.5 py-1 rounded border border-border hover:bg-bgTertiary text-xs font-medium text-accentRed hover:text-red-400 transition-colors">
-              Șterge
-            </button>
-          </td>
-        `;
-        tbody.appendChild(tr);
-      });
-    }
-
-    async function submitManualToken() {
-      const token = document.getElementById('manualTokenInput').value.trim();
-      if (!token) return;
-
-      try {
-        const res = await apiRequest('/admin/api/token/add', {
-          method: 'POST',
-          body: { token }
-        });
-        const data = await res.json();
-        if (data.success) {
-          alert(`Token adăugat cu succes pentru ${data.email}`);
-          closeModal('addTokenModal');
-          document.getElementById('manualTokenInput').value = '';
-          loadTokensList();
-        } else {
-          alert(`Eroare: ${data.error.message}`);
-        }
-      } catch (err) {
-        alert('Eroare la adăugarea token-ului');
-      }
-    }
-
-    async function submitLoginToken() {
-      const email = document.getElementById('loginEmailInput').value.trim();
-      const password = document.getElementById('loginPasswordInput').value.trim();
-      if (!email || !password) return;
-
-      try {
-        const res = await apiRequest('/admin/api/token/login', {
-          method: 'POST',
-          body: { email, password }
-        });
-        const data = await res.json();
-        if (data.success) {
-          alert(`Autentificare reușită pentru ${data.email}`);
-          closeModal('loginModal');
-          document.getElementById('loginEmailInput').value = '';
-          document.getElementById('loginPasswordInput').value = '';
-          loadTokensList();
-        } else {
-          alert(`Eroare: ${data.error.message}`);
-        }
-      } catch (err) {
-        alert('Eroare la autentificare');
-      }
-    }
-
-    async function deleteToken(email) {
-      if (!confirm(`Sigur doriți să ștergeți contul ${email}?`)) return;
-
-      try {
-        const res = await apiRequest('/admin/api/token/delete', {
-          method: 'DELETE',
-          body: { email }
-        });
-        const data = await res.json();
-        if (data.success) {
-          alert(data.message);
-          loadTokensList();
-        } else {
-          alert(`Eroare: ${data.error.message}`);
-        }
-      } catch (err) {
-        alert('Eroare la ștergerea token-ului');
-      }
-    }
-
-    async function triggerRefresh(email, isManual) {
-      if (isManual) {
-        document.getElementById('refreshEmailTarget').value = email;
-        document.getElementById('refreshEmailLabel').innerText = email;
-        document.getElementById('refreshManualTokenInput').value = '';
-        openModal('refreshTokenModal');
-      } else {
-        if (!confirm(`Doriți să reîmprospătați token-ul pentru ${email} folosind parola salvată?`)) return;
-        try {
-          const res = await apiRequest('/admin/api/token/refresh', {
-            method: 'POST',
-            body: { email }
-          });
-          const data = await res.json();
-          if (data.success) {
-            alert(data.message);
-            loadTokensList();
-          } else {
-            alert(`Eroare: ${data.error.message}`);
-          }
-        } catch (err) {
-          alert('Eroare la reîmprospătare');
-        }
-      }
-    }
-
-    async function submitRefreshManualToken() {
-      const email = document.getElementById('refreshEmailTarget').value;
-      const token = document.getElementById('refreshManualTokenInput').value.trim();
-      if (!token) return;
-
-      try {
-        const res = await apiRequest('/admin/api/token/refresh', {
-          method: 'POST',
-          body: { email, token }
-        });
-        const data = await res.json();
-        if (data.success) {
-          alert(data.message);
-          closeModal('refreshTokenModal');
-          loadTokensList();
-        } else {
-          alert(`Eroare: ${data.error.message}`);
-        }
-      } catch (err) {
-        alert('Eroare la actualizarea token-ului manual');
-      }
-    }
-
-    // Settings
-    async function saveSettings() {
-      const apiKey = document.getElementById('setting-api-key').value.trim();
-      const adminPassword = document.getElementById('setting-admin-password').value.trim();
-      const maxConcurrentPerToken = document.getElementById('setting-max-concurrent').value;
-      const queueTimeoutMs = document.getElementById('setting-queue-timeout').value;
-
-      const body = {
-        apiKey,
-        maxConcurrentPerToken,
-        queueTimeoutMs
-      };
-      if (adminPassword) {
-        body.adminPassword = adminPassword;
-      }
-
-      try {
-        const res = await apiRequest('/admin/api/config/update', {
-          method: 'POST',
-          body
-        });
-        const data = await res.json();
-        if (data.success) {
-          alert(data.message);
-          if (adminPassword) {
-            // Dacă parola admin a fost schimbată, actualizăm token-ul local
-            adminToken = adminPassword;
-            localStorage.setItem('adminToken', adminToken);
-            document.getElementById('setting-admin-password').value = '';
-          }
-          refreshStats();
-        } else {
-          alert(`Eroare: ${data.error.message}`);
-        }
-      } catch (err) {
-        alert('Eroare la salvarea setărilor');
-      }
-    }
-
-    // Logs
-    async function loadSystemLogs(page) {
-      currentPage = page;
-      try {
-        const res = await apiRequest(`/admin/api/system-logs?page=${page}&limit=${logsLimit}`);
-        const data = await res.json();
-        if (data.success) {
-          const viewer = document.getElementById('logViewer');
-          viewer.innerHTML = '';
-          if (data.logs.length === 0) {
-            viewer.innerHTML = `<div class="text-textSecondary italic">Niciun log înregistrat pe această pagină</div>`;
-          } else {
-            data.logs.forEach(line => {
-              const div = document.createElement('div');
-              div.className = 'py-0.5 border-b border-border/10 hover:bg-bgSecondary/40';
-              if (line.includes('[ERROR]')) {
-                div.className += ' text-accentRed';
-              } else if (line.includes('[WARN]')) {
-                div.className += ' text-accentYellow';
-              } else {
-                div.className += ' text-textSecondary';
-              }
-              div.innerText = line;
-              viewer.appendChild(div);
-            });
-          }
-
-          // Update Pagination
-          document.getElementById('logsPaginationInfo').innerText = `Pagina ${data.page} din ${data.totalPages} (Total linii: ${data.totalLines})`;
-          document.getElementById('prevLogsBtn').disabled = data.page <= 1;
-          document.getElementById('nextLogsBtn').disabled = data.page >= data.totalPages;
-        }
-      } catch (err) {
-        console.error('Eroare la încărcarea logurilor:', err);
-      }
-    }
-
-    function changeLogsPage(dir) {
-      loadSystemLogs(currentPage + dir);
-    }
-
-    async function loadRecentCalls() {
-      try {
-        const res = await apiRequest('/admin/api/stats');
-        const data = await res.json();
-        if (data.status === 'ok') {
-          renderRecentCallsTable(data.analytics.recentLogs);
-        }
-      } catch (err) {
-        console.error('Eroare la încărcarea istoricului de apeluri:', err);
-      }
-    }
-
-    function renderRecentCallsTable(logs) {
-      const tbody = document.getElementById('recentCallsTableBody');
-      tbody.innerHTML = '';
-      if (logs.length === 0) {
-        tbody.innerHTML = `<tr><td colspan="5" class="py-4 text-center text-textSecondary">Niciun apel înregistrat recent</td></tr>`;
-        return;
-      }
-
-      logs.forEach(item => {
-        const statusClass = item.status === 'success' ? 'bg-accentGreen/10 text-accentGreen border-accentGreen/20' : 'bg-accentRed/10 text-accentRed border-accentRed/20';
-        const statusText = item.status === 'success' ? 'Succes' : 'Eroare';
-        const dateStr = new Date(item.timestamp).toLocaleString('ro-RO');
-
-        const tr = document.createElement('tr');
-        tr.className = 'hover:bg-bgTertiary/30 transition-colors';
-        tr.innerHTML = `
-          <td class="py-3 px-4 text-textSecondary text-xs">${dateStr}</td>
-          <td class="py-3 px-4 font-medium text-white">${item.model}</td>
-          <td class="py-3 px-4">
-            <span class="px-2 py-0.5 rounded-full text-xs border ${statusClass}">${statusText}</span>
-          </td>
-          <td class="py-3 px-4 text-white font-semibold">${item.duration} ms</td>
-          <td class="py-3 px-4 text-textSecondary text-xs">${item.tokenUsed || 'Nespecificat'}</td>
-        `;
-        tbody.appendChild(tr);
-      });
-    }
-
-    // Export CSV
-    function convertToCSV(objArray) {
-      const array = typeof objArray !== 'object' ? JSON.parse(objArray) : objArray;
-      let str = '';
-      if (array.length === 0) return str;
-      
-      const headers = Object.keys(array[0]);
-      str += headers.join(',') + '\r\n';
-
-      for (let i = 0; i < array.length; i++) {
-        let line = '';
-        for (let index in array[i]) {
-          if (line !== '') line += ',';
-          let val = array[i][index];
-          if (typeof val === 'string') {
-            val = val.replace(/"/g, '""');
-            if (val.search(/([",\n])/g) >= 0) {
-              val = '"' + val + '"';
+            plugins: {
+              legend: { labels: { color: '#c9d1d9' } }
             }
           }
-          line += val;
+        });
+      }
+    }
+
+    // Fetch dynamic models from /v1/models to populate the dropdown
+    function fetchDynamicModels() {
+      fetch('/v1/models', {
+        headers: { 'Authorization': `Bearer ${apiKey || adminPassword}` }
+      })
+      .then(res => res.json())
+      .then(data => {
+        if (data && Array.isArray(data.data)) {
+          const select = document.getElementById('playgroundModel');
+          // Keep existing options but update or append new ones dynamically
+          const existingValues = Array.from(select.options).map(opt => opt.value);
+          data.data.forEach(model => {
+            if (!existingValues.includes(model.id)) {
+              const opt = document.createElement('option');
+              opt.value = model.id;
+              opt.innerText = model.id;
+              select.appendChild(opt);
+            }
+          });
         }
-        str += line + '\r\n';
-      }
-      return str;
+      })
+      .catch(err => console.warn('Nu s-au putut prelua modelele dinamice:', err));
     }
 
-    function downloadCSV(csvContent, fileName) {
-      // Injectare BOM UTF-8 pentru compatibilitate Excel Windows
-      const BOM = '\uFEFF';
-      const blob = new Blob([BOM + csvContent], { type: 'text/csv;charset=utf-8;' });
-      const link = document.createElement("a");
-      if (link.download !== undefined) {
-        const url = URL.createObjectURL(blob);
-        link.setAttribute("href", url);
-        link.setAttribute("download", fileName);
-        link.style.visibility = 'hidden';
-        document.body.appendChild(link);
-        link.click();
-        document.body.removeChild(link);
-      }
+    // File Upload Handlers
+    function triggerFileUpload() {
+      document.getElementById('chatFileInput').click();
     }
 
-    async function exportSystemLogs() {
-      try {
-        const res = await apiRequest(`/admin/api/system-logs?page=1&limit=10000`);
-        const data = await res.json();
+    function handleFileSelect(event) {
+      const file = event.target.files[0];
+      if (!file) return;
+
+      const reader = new FileReader();
+      reader.onload = function(e) {
+        uploadedFile = {
+          name: file.name,
+          type: file.type,
+          dataUrl: e.target.result
+        };
+        renderFilePreview();
+      };
+      reader.readAsDataURL(file);
+    }
+
+    function renderFilePreview() {
+      const container = document.getElementById('filePreviewContainer');
+      if (!uploadedFile) {
+        container.style.display = 'none';
+        container.innerHTML = '';
+        return;
+      }
+
+      container.style.display = 'flex';
+      const isImage = uploadedFile.type.startsWith('image/');
+      container.innerHTML = `
+        <div class="file-preview-item">
+          ${isImage ? `<img src="${uploadedFile.dataUrl}" alt="Preview">` : '📄'}
+          <span class="file-name" title="${uploadedFile.name}">${uploadedFile.name}</span>
+          <button class="remove-file" onclick="removeUploadedFile()">×</button>
+        </div>
+      `;
+    }
+
+    function removeUploadedFile() {
+      uploadedFile = null;
+      document.getElementById('chatFileInput').value = '';
+      renderFilePreview();
+    }
+
+    // Token management actions
+    function openTokenModal() { document.getElementById('tokenModal').classList.add('active'); }
+    function closeTokenModal() { document.getElementById('tokenModal').classList.remove('active'); }
+    function openLoginModal() { document.getElementById('loginModal').classList.add('active'); }
+    function closeLoginModal() { document.getElementById('loginModal').classList.remove('active'); }
+
+    function submitToken() {
+      const token = document.getElementById('tokenInput').value;
+      fetch('/admin/api/token/add', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${adminPassword}`
+        },
+        body: JSON.stringify({ token })
+      })
+      .then(res => res.json())
+      .then(data => {
         if (data.success) {
-          const formattedLogs = data.logs.map(line => ({ log: line }));
-          const csv = convertToCSV(formattedLogs);
-          downloadCSV(csv, `system_logs_${Date.now()}.csv`);
+          alert('Token adăugat cu succes!');
+          closeTokenModal();
+          refreshStats();
+        } else {
+          alert('Eroare: ' + data.error.message);
         }
-      } catch (err) {
-        alert('Eroare la exportul logurilor');
-      }
+      });
     }
 
-    async function exportRecentCalls() {
-      try {
-        const res = await apiRequest('/admin/api/stats');
-        const data = await res.json();
-        if (data.status === 'ok') {
-          const csv = convertToCSV(data.analytics.recentLogs);
-          downloadCSV(csv, `recent_calls_${Date.now()}.csv`);
+    function submitLogin() {
+      const email = document.getElementById('loginEmail').value;
+      const password = document.getElementById('loginPassword').value;
+      fetch('/admin/api/token/login', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${adminPassword}`
+        },
+        body: JSON.stringify({ email, password })
+      })
+      .then(res => res.json())
+      .then(data => {
+        if (data.success) {
+          alert('Cont autentificat și adăugat cu succes!');
+          closeLoginModal();
+          refreshStats();
+        } else {
+          alert('Eroare: ' + data.error.message);
         }
-      } catch (err) {
-        alert('Eroare la exportul istoricului de apeluri');
+      });
+    }
+
+    function deleteToken(email) {
+      if (!confirm(`Sigur dorești să ștergi contul ${email}?`)) return;
+      fetch('/admin/api/token/delete', {
+        method: 'DELETE',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${adminPassword}`
+        },
+        body: JSON.stringify({ email })
+      })
+      .then(res => res.json())
+      .then(data => {
+        if (data.success) {
+          alert('Cont șters cu succes!');
+          refreshStats();
+        } else {
+          alert('Eroare: ' + data.error.message);
+        }
+      });
+    }
+
+    function refreshToken(email, isManual) {
+      let token = null;
+      if (isManual) {
+        token = prompt('Introdu noul token JWT pentru acest cont manual:');
+        if (!token) return;
       }
+      fetch('/admin/api/token/refresh', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${adminPassword}`
+        },
+        body: JSON.stringify({ email, token })
+      })
+      .then(res => res.json())
+      .then(data => {
+        if (data.success) {
+          alert(data.message);
+          refreshStats();
+        } else {
+          alert('Eroare: ' + data.error.message);
+        }
+      });
+    }
+
+    function saveSettings() {
+      const apiKeyVal = document.getElementById('apiKeyInput').value;
+      const adminPasswordVal = document.getElementById('adminPasswordInput2').value;
+      const maxConcurrentVal = document.getElementById('maxConcurrentInput').value;
+      const queueTimeoutVal = document.getElementById('queueTimeoutInput').value;
+
+      fetch('/admin/api/config/update', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${adminPassword}`
+        },
+        body: JSON.stringify({
+          apiKey: apiKeyVal,
+          adminPassword: adminPasswordVal,
+          maxConcurrentPerToken: maxConcurrentVal,
+          queueTimeoutMs: queueTimeoutVal
+        })
+      })
+      .then(res => res.json())
+      .then(data => {
+        if (data.success) {
+          alert('Configurație salvată cu succes!');
+          if (adminPasswordVal) adminPassword = adminPasswordVal;
+          refreshStats();
+        } else {
+          alert('Eroare: ' + data.error.message);
+        }
+      });
+    }
+
+    // System Logs
+    function loadSystemLogs(page) {
+      if (page < 1 || (totalPages && page > totalPages)) return;
+      currentPage = page;
+      const logViewer = document.getElementById('logViewer');
+      logViewer.innerHTML = '<div class="loading"></div>';
+
+      fetch(`/admin/api/system-logs?page=${page}&limit=100`, {
+        headers: { 'Authorization': `Bearer ${adminPassword}` }
+      })
+      .then(res => res.json())
+      .then(data => {
+        if (data.success) {
+          totalPages = data.totalPages;
+          document.getElementById('logsPagination').innerText = `Pagina ${data.page} din ${data.totalPages}`;
+          document.getElementById('prevLogsBtn').disabled = data.page <= 1;
+          document.getElementById('nextLogsBtn').disabled = data.page >= data.totalPages;
+
+          logViewer.innerHTML = data.logs.map(line => {
+            let type = 'info';
+            if (line.includes('[WARN]')) type = 'warn';
+            if (line.includes('[ERROR]')) type = 'error';
+            return `<div class="log-line ${type}">${escapeHtml(line)}</div>`;
+          }).join('');
+          logViewer.scrollTop = logViewer.scrollHeight;
+        }
+      });
+    }
+
+    function refreshLogs() {
+      loadSystemLogs(currentPage);
+    }
+
+    function exportLogs() {
+      window.open(`/admin/api/system-logs?page=1&limit=1000&export=csv`, '_blank');
+    }
+
+    function exportRecentLogs() {
+      alert('Funcționalitate de export în curs de implementare.');
     }
 
     // Playground Chat
-    async function sendChatMessage() {
+    function sendChatMessage() {
       const input = document.getElementById('chatInput');
       const text = input.value.trim();
-      if (!text) return;
+      if (!text && !uploadedFile) return;
 
+      // Append user message to UI
+      appendMessage('user', text, uploadedFile);
       input.value = '';
-      appendMessage('user', text);
+
+      // Construct content payload
+      let contentPayload = text;
+      if (uploadedFile) {
+        contentPayload = [
+          { type: 'text', text: text || 'Analizează fișierul atașat:' }
+        ];
+        if (uploadedFile.type.startsWith('image/')) {
+          contentPayload.push({
+            type: 'image_url',
+            image_url: { url: uploadedFile.dataUrl }
+          });
+        } else {
+          contentPayload.push({
+            type: 'file_url',
+            file_url: { url: uploadedFile.dataUrl }
+          });
+        }
+      }
+
+      chatHistory.push({ role: 'user', content: contentPayload });
+      
+      // Clear uploaded file preview
+      removeUploadedFile();
 
       const model = document.getElementById('playgroundModel').value;
-      const messagesContainer = document.getElementById('chatMessages');
+      const assistantMessageId = appendMessage('assistant', '');
+      const assistantMessageContent = document.getElementById(assistantMessageId).querySelector('.message-text');
+      
+      // Add typing indicator
+      const typingIndicator = document.createElement('div');
+      typingIndicator.className = 'typing-indicator';
+      typingIndicator.innerHTML = '<div class="typing-dot"></div><div class="typing-dot"></div><div class="typing-dot"></div>';
+      assistantMessageContent.appendChild(typingIndicator);
 
-      // Adăugare element răspuns asistent (cu stare de încărcare)
-      const assistantMsgDiv = document.createElement('div');
-      assistantMsgDiv.className = 'flex items-start gap-3 max-w-3xl animate-pulse';
-      assistantMsgDiv.innerHTML = `
-        <div class="w-8 h-8 rounded-full bg-accentGreen/10 text-accentGreen flex items-center justify-center flex-shrink-0">
-          <i data-lucide="bot" class="w-4 h-4"></i>
-        </div>
-        <div class="p-3 rounded-lg bg-bgSecondary border border-border text-sm space-y-2 w-full">
-          <div class="h-4 bg-bgTertiary rounded w-3/4"></div>
-          <div class="h-4 bg-bgTertiary rounded w-1/2"></div>
-        </div>
-      `;
-      messagesContainer.appendChild(assistantMsgDiv);
-      messagesContainer.scrollTop = messagesContainer.scrollHeight;
-      initIcons();
+      let thinkingBlock = null;
+      let researchBlock = null;
 
-      try {
-        const res = await fetch('/v1/chat/completions', {
-          method: 'POST',
-          headers: {
-            'Content-Type': 'application/json',
-            'Authorization': `Bearer ${adminToken}`
-          },
-          body: JSON.stringify({
-            model: model,
-            messages: [{ role: 'user', content: text }],
-            stream: true
-          })
-        });
-
+      fetch('/v1/chat/completions', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${apiKey || adminPassword}`
+        },
+        body: JSON.stringify({
+          model: model,
+          messages: chatHistory,
+          stream: true
+        })
+      })
+      .then(res => {
+        typingIndicator.remove();
         if (!res.ok) {
-          const errData = await res.json();
-          throw new Error(errData.error?.message || 'Eroare necunoscută');
+          return res.text().then(text => { throw new Error(text) });
         }
-
-        assistantMsgDiv.classList.remove('animate-pulse');
-        const contentDiv = assistantMsgDiv.querySelector('.p-3');
-        contentDiv.innerHTML = ''; // Curățare schelet loading
 
         const reader = res.body.getReader();
         const decoder = new TextDecoder();
         let buffer = '';
-        let fullText = '';
-        let thinkingText = '';
-        let isThinking = false;
-        let thinkingDiv = null;
-        let textSpan = null;
+        let fullResponse = '';
 
-        while (true) {
-          const { done, value } = await reader.read();
-          if (done) break;
-
-          buffer += decoder.decode(value, { stream: true });
-          const lines = buffer.split('\n');
-          buffer = lines.pop() || '';
-
-          for (const line of lines) {
-            if (!line.startsWith('data: ')) continue;
-            const dataStr = line.slice(6).trim();
-            if (dataStr === '[DONE]') continue;
-
-            try {
-              const parsed = JSON.parse(dataStr);
-              const choice = parsed.choices?.[0];
-              if (!choice) continue;
-
-              // Procesare proces de gândire (Reasoning / Thinking)
-              if (choice.delta?.reasoning_content) {
-                if (!isThinking) {
-                  isThinking = true;
-                  thinkingDiv = document.createElement('div');
-                  thinkingDiv.className = 'p-2.5 mb-2 rounded bg-accentYellow/5 border-l-2 border-accentYellow text-xs text-textSecondary space-y-1';
-                  thinkingDiv.innerHTML = `<div class="font-semibold text-accentYellow flex items-center gap-1"><i data-lucide="brain" class="w-3.5 h-3.5"></i> Proces de gândire...</div><div class="thinking-content whitespace-pre-wrap"></div>`;
-                  contentDiv.appendChild(thinkingDiv);
-                  initIcons();
-                }
-                thinkingText += choice.delta.reasoning_content;
-                thinkingDiv.querySelector('.thinking-content').innerText = thinkingText;
-              }
-
-              // Procesare conținut răspuns final
-              if (choice.delta?.content) {
-                if (isThinking) {
-                  isThinking = false; // Finalizare secțiune gândire
-                  if (thinkingDiv) {
-                    // Adăugare posibilitate de colapsare
-                    const header = thinkingDiv.querySelector('.font-semibold');
-                    header.classList.add('cursor-pointer', 'select-none');
-                    header.onclick = () => {
-                      const content = thinkingDiv.querySelector('.thinking-content');
-                      content.classList.toggle('hidden');
-                    };
-                  }
-                }
-                if (!textSpan) {
-                  textSpan = document.createElement('span');
-                  textSpan.className = 'whitespace-pre-wrap';
-                  contentDiv.appendChild(textSpan);
-                }
-                fullText += choice.delta.content;
-                textSpan.innerText = fullText;
-              }
-            } catch (e) {
-              // Ignorare erori de parsare linii incomplete
+        function read() {
+          reader.read().then(({ done, value }) => {
+            if (done) {
+              chatHistory.push({ role: 'assistant', content: fullResponse });
+              return;
             }
-          }
-          messagesContainer.scrollTop = messagesContainer.scrollHeight;
-        }
 
-      } catch (err) {
-        assistantMsgDiv.classList.remove('animate-pulse');
-        const contentDiv = assistantMsgDiv.querySelector('.p-3');
-        contentDiv.innerHTML = `<span class="text-accentRed font-medium">Eroare: ${err.message}</span>`;
-      }
+            buffer += decoder.decode(value, { stream: true });
+            const lines = buffer.split('\n');
+            buffer = lines.pop();
+
+            for (const line of lines) {
+              if (line.startsWith('data: ')) {
+                const dataStr = line.slice(6).trim();
+                if (dataStr === '[DONE]') continue;
+                try {
+                  const parsed = JSON.parse(dataStr);
+                  const choice = parsed.choices[0];
+                  if (choice && choice.delta) {
+                    const delta = choice.delta;
+
+                    // Handle thinking process
+                    if (delta.reasoning_content) {
+                      if (!thinkingBlock) {
+                        thinkingBlock = document.createElement('div');
+                        thinkingBlock.className = 'thinking-block';
+                        thinkingBlock.innerHTML = `
+                          <div class="thinking-header" onclick="toggleThinking(this)">
+                            <span class="thinking-title">🧠 Proces de gândire</span>
+                            <span>▼</span>
+                          </div>
+                          <div class="thinking-content"></div>
+                        `;
+                        assistantMessageContent.parentNode.insertBefore(thinkingBlock, assistantMessageContent);
+                      }
+                      thinkingBlock.querySelector('.thinking-content').innerText += delta.reasoning_content;
+                    }
+
+                    // Handle content response
+                    if (delta.content) {
+                      fullResponse += delta.content;
+                      assistantMessageContent.innerText = fullResponse;
+                    }
+                  }
+                } catch (e) {}
+              }
+            }
+            read();
+          });
+        }
+        read();
+      })
+      .catch(err => {
+        typingIndicator.remove();
+        assistantMessageContent.innerHTML = `<span style="color: var(--accent-red);">Eroare: ${err.message}</span>`;
+      });
     }
 
-    function appendMessage(role, text) {
-      const container = document.getElementById('chatMessages');
+    function appendMessage(role, text, file = null) {
+      const id = 'msg-' + Date.now();
+      const messagesContainer = document.getElementById('chatMessages');
       const msgDiv = document.createElement('div');
-      msgDiv.className = `flex items-start gap-3 max-w-3xl ${role === 'user' ? 'ml-auto flex-row-reverse' : ''}`;
+      msgDiv.className = `message ${role}`;
       
-      const avatarBg = role === 'user' ? 'bg-accentBlue/10 text-accentBlue' : 'bg-accentGreen/10 text-accentGreen';
-      const avatarIcon = role === 'user' ? 'user' : 'bot';
+      let fileHtml = '';
+      if (file) {
+        const isImage = file.type.startsWith('image/');
+        fileHtml = `
+          <div style="margin-bottom: 0.5rem; max-width: 300px;">
+            ${isImage ? `<img src="${file.dataUrl}" style="max-width: 100%; border-radius: 6px; border: 1px solid var(--border-color);">` : `
+              <div style="background: var(--bg-tertiary); padding: 0.5rem; border-radius: 6px; border: 1px solid var(--border-color); display: flex; align-items: center; gap: 0.5rem;">
+                📄 <span style="font-size: 0.85rem; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;">${file.name}</span>
+              </div>
+            `}
+          </div>
+        `;
+      }
 
       msgDiv.innerHTML = `
-        <div class="w-8 h-8 rounded-full ${avatarBg} flex items-center justify-center flex-shrink-0">
-          <i data-lucide="${avatarIcon}" class="w-4 h-4"></i>
-        </div>
-        <div class="p-3 rounded-lg bg-bgSecondary border border-border text-sm whitespace-pre-wrap">
-          ${text}
+        <div class="message-avatar">${role === 'user' ? 'U' : 'Q'}</div>
+        <div class="message-content" id="${id}">
+          ${fileHtml}
+          <div class="message-text">${escapeHtml(text)}</div>
         </div>
       `;
-      container.appendChild(msgDiv);
-      container.scrollTop = container.scrollHeight;
-      initIcons();
+      messagesContainer.appendChild(msgDiv);
+      messagesContainer.scrollTop = messagesContainer.scrollHeight;
+      return id;
+    }
+
+    function clearChat() {
+      document.getElementById('chatMessages').innerHTML = '';
+      chatHistory = [];
+      removeUploadedFile();
+    }
+
+    function toggleThinking(header) {
+      const content = header.nextElementSibling;
+      content.classList.toggle('collapsed');
+      header.querySelector('span:last-child').innerText = content.classList.contains('collapsed') ? '▲' : '▼';
+    }
+
+    function escapeHtml(text) {
+      if (!text) return '';
+      return text
+        .replace(/&/g, "&amp;")
+        .replace(/</g, "&lt;")
+        .replace(/>/g, "&gt;")
+        .replace(/"/g, "&quot;")
+        .replace(/'/g, "&#039;");
     }
   </script>
 </body>
